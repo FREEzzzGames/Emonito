@@ -11,7 +11,27 @@
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true"></span><div><h1>EMONITO</h1><div class="sub">EARTH MONITORING SYSTEM / OPEN DATA</div></div></div><div class="top-right"><span><i class="dot"></i>PUBLIC SOURCES</span><span id="clock">UTC --:--:--</span><button id="refreshAll" type="button">↻ REFRESH DATA</button></div></header>
 <section class="intro"><div><div class="eyebrow">PLANET EARTH CONTROL DECK / 12 MONITORING DOMAINS</div><h2>Observe the living planet.</h2><p>Реальные открытые данные. Временные метки и недоступность источников показываются явно; прогнозы и архивные оценки не выдаются за прямые измерения.</p></div><div class="toolbar" aria-label="Filter monitoring domains"><button data-category="earth">EARTH</button><button data-category="weather">WEATHER</button><button data-category="space">SPACE</button><button data-category="transport">TRANSPORT</button><button data-category="energy">ENERGY</button></div></section>
 <main class="grid">
-<section class="panel map-panel" data-module="earth"><div class="head"><span class="title">01 / GEOGRAPHY + SATELLITE IMAGERY</span><div class="map-head-tools"><select id="imageryMode" aria-label="Map imagery"><option value="street">Street map</option><option value="satellite">NASA satellite layer</option><option value="clouds">Cloud-top layer</option></select><span class="status" id="mapStatus">INITIALIZING</span></div></div><div class="map-wrap"><div id="map" class="map" aria-label="Interactive geographic map"></div><div class="map-note"><div id="selectedCoords">GLOBAL VIEW</div><div>CLICK MAP TO INSPECT WEATHER / AIR QUALITY</div><button id="mapLocate" type="button">USE MY LOCATION</button> <button id="mapReset" type="button">RESET</button></div></div></section>
+<section class="panel map-panel" data-module="earth"><div class="head"><span class="title">01 / GEOGRAPHY + SATELLITE IMAGERY</span><div class="map-head-tools"><select id="imageryMode" aria-label="Map imagery"><option value="street">Street map</option><option value="satellite">NASA satellite layer</option><option value="clouds">Cloud-top layer</option></select><span class="status" id="mapStatus">INITIALIZING</span></div></div><div class="map-wrap"><div id="map" class="map" aria-label="Interactive geographic map"></div><div class="map-note"><div id="selectedCoords">GLOBAL VIEW</div><div>CLICK MAP TO INSPECT WEATHER / AIR QUALITY</div><button id="mapLocate" type="button">USE MY LOCATION</button> <button id="mapReset" type="button">RESET</button></div></div>
+<div class="map-tools-row">
+  <button id="layerMenuToggle" type="button" aria-expanded="false">☷ СЛОИ КАРТЫ</button>
+  <div class="layer-menu" id="layerMenu" hidden aria-label="Управление слоями">
+    <label><input type="checkbox" data-layer-toggle="quakes" checked> Землетрясения</label>
+    <label><input type="checkbox" data-layer-toggle="events" checked> Природные события</label>
+    <label><input type="checkbox" data-layer-toggle="iss" checked> МКС</label>
+    <label><input type="checkbox" data-layer-toggle="issTrail" checked> Траектория МКС</label>
+    <label><input type="checkbox" data-layer-toggle="transport"> Транспорт</label>
+    <label><input type="checkbox" data-layer-toggle="aircraft"> Самолёты</label>
+    <label><input type="checkbox" data-layer-toggle="energy"> Энергетика</label>
+    <label><input type="checkbox" data-layer-toggle="satellite"> Спутниковая подложка</label>
+    <label><input type="checkbox" data-layer-toggle="clouds"> Облачность</label>
+  </div>
+  <label class="timeline-control" for="quakeTimeline">Землетрясения
+    <select id="quakeTimeline" aria-label="Период землетрясений">
+      <option value="1">Последний час</option><option value="6">6 часов</option><option value="24" selected>24 часа</option>
+    </select>
+  </label>
+</div>
+</section>
 <section class="side">
 <article class="panel metric" data-module="geology"><div class="label">02 / EARTHQUAKES · 24H</div><div><div class="value" id="quakeCount">—</div><div class="detail">USGS public feed</div><div class="detail" id="quakePeak">Largest: —</div></div></article>
 <article class="panel metric" data-module="disasters"><div class="label">03 / OPEN NATURAL EVENTS</div><div><div class="value" id="eventCount">—</div><div class="detail">NASA EONET</div></div></article>
