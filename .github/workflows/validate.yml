@@ -16,7 +16,12 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: node --check app.js
+        run: |
+          for file in app.js config.js api.js map.js ui.js eslint.config.js; do node --check "$file"; done
+      - name: ESLint
+        run: npx --yes eslint@9 --config eslint.config.js app.js config.js api.js map.js ui.js
+      - name: Stylelint
+        run: npx --yes stylelint@16 --config stylelint.config.js styles.css
       - name: Validate HTML structure and referenced element IDs
         run: |
           python - <<'PY'
