@@ -342,7 +342,7 @@ import { setupMobileCollapsibles } from './ui.js';
     }
     function finish(status){
       if(!tour||tour.hidden)return;
-      tour.hidden=true;overlay.hidden=true;removeSpotlight();
+      tour.hidden=true;overlay.hidden=true;overlay.setAttribute('aria-hidden','true');removeSpotlight();
       document.body.classList.remove('onboarding-open');
       window.removeEventListener('resize',position);
       window.removeEventListener('scroll',scrollHandler,true);
@@ -367,7 +367,7 @@ import { setupMobileCollapsibles } from './ui.js';
       counter.textContent=(index+1)+' / '+steps.length;
       back.disabled=index===0;
       next.textContent=index===steps.length-1?'Начать мониторинг':'Далее →';
-      overlay.hidden=false;tour.hidden=false;document.body.classList.add('onboarding-open');
+      overlay.hidden=false;overlay.setAttribute('aria-hidden','false');tour.hidden=false;document.body.classList.add('onboarding-open');
       requestAnimationFrame(position);
     }
     function start(){
