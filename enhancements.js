@@ -56,7 +56,7 @@ export function initEnhancements({ state }) {
   const presets = read(STORE.presets, {});
   const favorites = read(STORE.favorites, []);
   const history = read(STORE.history, []);
-  const thresholds = Object.assign({ aqi: 100, uv: 8 }, read(STORE.thresholds, {}));
+  const thresholds = Object.assign({ aqi: 100, uv: 8, flare: 'M' }, read(STORE.thresholds, {}));
 
   function currentLayerState() {
     const result = {};
@@ -195,16 +195,16 @@ export function initEnhancements({ state }) {
     $('emoQuake').textContent = nearest && nearest.km < 500 ? 'M' + nfmt(nearest.feature.properties?.mag, 1) + ' · ' + nfmt(nearest.km, 0) + ' км' : 'Нет в загруженном фиде';
     const failures = results.filter(r => r.status === 'rejected').length;
     $('emoPointStatus').textContent = failures === 0 ? 'Модельные данные получены · ' + new Date().toLocaleTimeString() : failures + ' источник(а) недоступны; недостающие значения не подменены.';
-    if (Number.isFinite(Number(air.european_aqi)) && Number(air.european_aqi) >= thresholds.aqi) notify('AQI достиг порога ' + thresholds.aqi + ': ' + nfmt(air.european_aqi, 0));
-    if (Number.isFinite(Number(weather.uv_index)) && Number(weather.uv_index) >= thresholds.uv) notify('UV достиг порога ' + thresholds.uv + ': ' + nfmt(weather.uv_index, 1));
+    if (Number.isFinite(Number(air.european_aqi)) && Number(air.european_aqi) >= thresholds.aqi) notify('AQI достиг порога ' + thresholds.aqi + ': ' + nfmt(air.european_aqi, 0), 'aqi-threshold');
+    if (Number.isFinite(Number(weather.uv_index)) && Number(weather.uv_index) >= thresholds.uv) notify('UV достиг порога ' + thresholds.uv + ': ' + nfmt(weather.uv_index, 1), 'uv-threshold');
     renderFavorites();
   }
-  function notify(message) {
-    $('emoPointStatus').textContent = message;
-    const key = 'emonito:last-alert:' + message;
+  function notify(message, alertKey = message) {
+    if (!$('emoInspector').hidden) $('emoPointStatus').textContent = message;
+    const key = 'emonito:last-alert:' + alertKey;
     try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch {}
-    const alert = document.createElement('div'); alert.className = 'emo-inline-alert'; alert.textContent = '⚠ ' + message; $('emoInspector').prepend(alert);
-    window.setTimeout(() => alert.remove(), 8000);
+    const toast = document.createElement('div'); toast.className = 'emo-toast'; toast.setAttribute('role', 'status'); toast.textContent = '⚠ ' + message; document.body.append(toast);
+    window.setTimeout(() => toast.remove(), 9000);
   }
   async function toggleWake(enable) {
     const button = $('emoWake');
@@ -247,9 +247,10 @@ export function initEnhancements({ state }) {
   $('emoThresholds').addEventListener('click', () => {
     const aqi = window.prompt('Порог European AQI для предупреждения', String(thresholds.aqi)); if (aqi === null) return;
     const uv = window.prompt('Порог UV-индекса для предупреждения', String(thresholds.uv)); if (uv === null) return;
-    const nextAqi = Number(aqi), nextUv = Number(uv);
-    if (!Number.isFinite(nextAqi) || nextAqi < 1 || !Number.isFinite(nextUv) || nextUv < 0 || nextUv > 30) { window.alert('Укажите AQI ≥ 1 и UV от 0 до 30.'); return; }
-    thresholds.aqi = nextAqi; thresholds.uv = nextUv; write(STORE.thresholds, thresholds);
+    const flare = window.prompt('Порог космической активности: C, M или X', thresholds.flare); if (flare === null) return;
+    const nextAqi = Number(aqi), nextUv = Number(uv), nextFlare = flare.trim().toUpperCase();
+    if (!Number.isFinite(nextAqi) || nextAqi < 1 || !Number.isFinite(nextUv) || nextUv < 0 || nextUv > 30 || !['C','M','X'].includes(nextFlare)) { window.alert('AQI должен быть ≥ 1, UV от 0 до 30, класс вспышки — C, M или X.'); return; }
+    thresholds.aqi = nextAqi; thresholds.uv = nextUv; thresholds.flare = nextFlare; write(STORE.thresholds, thresholds);
     $('emoPointStatus').textContent = 'Пороги сохранены на этом устройстве.';
   });
   $('emoApi').addEventListener('click', () => {
@@ -283,6 +284,12 @@ export function initEnhancements({ state }) {
     $('emoFreshness').textContent = recent ? 'СТАТУС UI ИЗМЕНЁН ' + recent.age + 'с · ' + recent.id : 'ОЖИДАНИЕ СТАТУСА';
     $('emoFreshness').title = entries.map(e => e.id + ': ' + (e.status || '—') + ' (' + e.age + 'с)').join('\n');
   }
+  const flareNode = $('flareClass');
+  if (flareNode) new MutationObserver(() => {
+    const value = flareNode.textContent.trim().toUpperCase();
+    const currentClass = value.charAt(0); const ranks = { A: 0, B: 1, C: 2, M: 3, X: 4 };
+    if (Object.hasOwn(ranks, currentClass) && ranks[currentClass] >= ranks[thresholds.flare]) notify('Порог космической активности ' + thresholds.flare + ' достигнут: ' + value, 'solar-flare-threshold');
+  }).observe(flareNode, { childList: true, characterData: true, subtree: true });
   updateFreshness(); window.setInterval(updateFreshness, 5000);
   window.addEventListener('beforeunload', () => { if (wakeLock) wakeLock.release().catch(() => {}); });
 }
