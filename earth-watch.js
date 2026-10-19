@@ -112,7 +112,7 @@ export function initEarthWatch({ state }) {
     }
   }
   async function loadInfrastructure() {
-    mark('infraStatus', 'ПРОВЕРКА ИСТОЧНИКОВ');
+    mark('infraStatus', 'ЗАГРУЗКА ОПОВЕЩЕНИЙ');
     const checks = [
       { name: 'SMARD · энергосистема Германии', detail: 'Публичные графики нагрузки, производства и биржевых цен; это не карта аварийных отключений.', url: 'https://www.smard.de/home' },
       { name: 'Bundesnetzagentur · Stromversorgung', detail: 'Официальная информация о надёжности и состоянии электроснабжения.', url: 'https://www.bundesnetzagentur.de/EN/Areas/Energy/Companies/SecurityOfSupply/start.html' },
@@ -128,9 +128,53 @@ export function initEarthWatch({ state }) {
       const detail = document.createElement('div'); detail.className = 'row-detail'; detail.textContent = item.detail;
       left.append(title, detail); li.append(left); list.append(li);
     });
-    set('infraCoverage', '5 официальных/публичных источников');
-    set('infraNotice', 'Пока подключён каталог первоисточников, а не единый live-поток аварий. Статус аварии не выводится без машинно-читаемого подтверждения.');
-    mark('infraStatus', 'КАТАЛОГ ИСТОЧНИКОВ', false);
+    set('infraCoverage', '5 источников · NINA + SMARD');
+    const results = await Promise.allSettled([
+      get('https://warnung.bund.de/api31/mowas/mapData.json'),
+      get('https://warnung.bund.de/api31/dwd/mapData.json'),
+      get('https://www.smard.de/app/chart_data/410/DE/index_hour.json')
+    ]);
+    const warningList = $('infraSources');
+    let liveWarnings = 0;
+    for (const result of results.slice(0, 2)) {
+      if (result.status !== 'fulfilled') continue;
+      const payload = result.value;
+      const items = Array.isArray(payload) ? payload : Array.isArray(payload?.features) ? payload.features : Array.isArray(payload?.warnings) ? payload.warnings : [];
+      items.slice(0, 20).forEach(item => {
+        const p = item.properties || item;
+        const titleText = p.headline || p.title || p.warntext || p.event || p.identifier || 'Amtliche Warnmeldung';
+        const detailText = [p.sender || p.provider || '', p.startDate || p.start || p.effective || '', p.areaDesc || p.area || ''].filter(Boolean).join(' · ');
+        const li = document.createElement('li'); li.className = 'data-row';
+        const left = document.createElement('div'); left.className = 'row-main';
+        const title = document.createElement('div'); title.className = 'row-title'; title.textContent = titleText;
+        const detail = document.createElement('div'); detail.className = 'row-detail'; detail.textContent = detailText || 'Подробности доступны в официальной карточке предупреждения.';
+        left.append(title, detail); li.append(left);
+        const link = p.url || p.link || p.web || p.details;
+        if (typeof link === 'string' && /^https:\/\//i.test(link)) {
+          const a = document.createElement('a'); a.href = link; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.className = 'row-value'; a.textContent = 'Источник ↗'; li.append(a);
+        }
+        warningList.append(li); liveWarnings++;
+      });
+    }
+    let gridText = 'Данные энергосистемы недоступны';
+    const grid = results[2];
+    if (grid.status === 'fulfilled' && Array.isArray(grid.value.timestamps) && grid.value.timestamps.length) {
+      const stamp = grid.value.timestamps[grid.value.timestamps.length - 1];
+      try {
+        const series = await get('https://www.smard.de/app/chart_data/410/DE/410_DE_hour_' + stamp + '.json');
+        const values = Array.isArray(series.series) ? series.series : [];
+        const latest = values.at(-1);
+        if (latest && Number.isFinite(Number(latest[1]))) gridText = 'Последняя сетевая нагрузка: ' + (Number(latest[1]) / 1000).toFixed(2) + ' GW · ' + new Date(Number(latest[0])).toLocaleString();
+        else gridText = 'SMARD ответил, но ряд нагрузки пуст.';
+      } catch (error) { gridText = 'SMARD: ' + error.message; }
+    } else if (grid.status === 'rejected') gridText = 'SMARD API недоступен: ' + grid.reason.message;
+    const gridItem = document.createElement('li'); gridItem.className = 'data-row';
+    const gridLeft = document.createElement('div'); gridLeft.className = 'row-main';
+    const gridTitle = document.createElement('div'); gridTitle.className = 'row-title'; gridTitle.textContent = 'Энергосистема Германии · SMARD';
+    const gridDetail = document.createElement('div'); gridDetail.className = 'row-detail'; gridDetail.textContent = gridText + ' · Нагрузка не является показателем аварийного отключения.';
+    gridLeft.append(gridTitle, gridDetail); gridItem.append(gridLeft); warningList.prepend(gridItem);
+    set('infraNotice', liveWarnings ? 'Получены предупреждения из открытых лент NINA/MoWaS или DWD. Покрытие и состав сообщений зависят от источника; это не полный список всех инфраструктурных неисправностей.' : 'Открытые ленты предупреждений сейчас не вернули записи или недоступны. Состояние энергосистемы показано отдельно и не подтверждает локальные отключения.');
+    mark('infraStatus', liveWarnings ? 'ОПОВЕЩЕНИЯ: ' + liveWarnings : 'ИСТОЧНИКИ ПРОВЕРЕНЫ', results.every(x => x.status === 'rejected'));
   }
   function usePoint(next) {
     if (!next || !Number.isFinite(Number(next.latitude)) || !Number.isFinite(Number(next.longitude))) return;
