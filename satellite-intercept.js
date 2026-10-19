@@ -44,8 +44,6 @@ export function initSatelliteIntercept({ state, $status }) {
   let lastCenter = null;
   let observer = state.location || { latitude: 48.89, longitude: 8.70 };
   let marker = null;
-  let footprintCircle = null;
-  let trailLine = null;
   let passRequest = 0;
 
   const setStatus = (message, mode = '') => {
@@ -70,13 +68,8 @@ export function initSatelliteIntercept({ state, $status }) {
     if (![latitude, longitude, altitude].every(Number.isFinite)) return null;
     return { latitude, longitude, altitude, velocity, pv, gmst, geo };
   };
-  const lookAtObserver = (position, date = new Date()) => {
+  const lookAtObserver = (position) => {
     if (!position || !satelliteLib) return null;
-    const obs = satelliteLib.geodeticToEcf({
-      longitude: observer.longitude * Math.PI / 180,
-      latitude: observer.latitude * Math.PI / 180,
-      height: 0
-    });
     const look = satelliteLib.ecfToLookAngles(
       { longitude: observer.longitude * Math.PI / 180, latitude: observer.latitude * Math.PI / 180, height: 0 },
       satelliteLib.eciToEcf(position.pv.position, position.gmst)
@@ -95,8 +88,6 @@ export function initSatelliteIntercept({ state, $status }) {
     trackLayer.clearLayers();
     footprintLayer.clearLayers();
     marker = null;
-    footprintCircle = null;
-    trailLine = null;
   };
   const addTrackAndFootprint = () => {
     if (!selected || !satelliteLib) return;
@@ -109,14 +100,13 @@ export function initSatelliteIntercept({ state, $status }) {
       if (pos) points.push([pos.latitude, pos.longitude]);
     }
     if (points.length > 1 && ui.trail?.checked) {
-      trailLine = L.polyline(points, { color: '#baff45', weight: 2, opacity: 0.85, dashArray: '5 5', interactive: false });
-      trailLine.addTo(trackLayer);
+      L.polyline(points, { color: '#baff45', weight: 2, opacity: 0.85, dashArray: '5 5', interactive: false }).addTo(trackLayer);
     }
     const current = getPosition(selected, now);
     if (!current) return;
     const groundRadiusKm = EARTH_RADIUS_KM * Math.acos(EARTH_RADIUS_KM / (EARTH_RADIUS_KM + Math.max(0, current.altitude)));
     if (ui.footprint?.checked) {
-      footprintCircle = L.circle([current.latitude, current.longitude], {
+      L.circle([current.latitude, current.longitude], {
         radius: groundRadiusKm * 1000, color: '#58d9ff', weight: 1, opacity: 0.8,
         fillColor: '#58d9ff', fillOpacity: 0.07, interactive: false
       }).addTo(footprintLayer);
