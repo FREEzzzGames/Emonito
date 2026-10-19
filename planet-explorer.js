@@ -55,7 +55,7 @@ function node(tag, className, text) {
   if (text != null) el.textContent = text;
   return el;
 }
-export function initPlanetExplorer({ state }) {
+export function initPlanetExplorer() {
   if (!$('planetBriefing')) return;
   const watch = new Set(readStore().watch || ['space','earth']);
   let activeExpedition = null;
@@ -115,6 +115,8 @@ export function initPlanetExplorer({ state }) {
     const root = $('planetBriefingCards');
     if (!root) return;
     root.replaceChildren();
+    const availableCount = metricIds.filter(id => value(id) != null).length;
+    safeText($('briefingStatus'), availableCount ? 'ДАННЫЕ ДОСТУПНЫ · ' + availableCount : 'ОЖИДАНИЕ ДАННЫХ');
     const items = [
       { id:'kpValue', module:'space', title:'Космическая погода', text:()=>{const v=value('kpValue');return v==null?'NOAA SWPC: показатель пока не получен.': 'Kp ' + v + ' — геомагнитная активность. Для оценки шанса сияния откройте слой NOAA OVATION.';}, target:'#moduleAurora', action:'Открыть космическую погоду' },
       { id:'quakeCount', module:'earth', title:'Сейсмическая активность', text:()=>{const v=value('quakeCount');return v==null?'Ожидается ответ USGS.':v+' событий в выбранном временном окне. Проверьте магнитуду, глубину и время отдельных событий.';}, target:'#quakeList', action:'Изучить события USGS' },
@@ -197,7 +199,7 @@ export function initPlanetExplorer({ state }) {
     const layerId=layerMap[action];
     if (layerId && $(layerId)) { $(layerId).checked=true;$(layerId).dispatchEvent(new Event('change',{bubbles:true})); }
     if (action==='quakes') { const cb=document.querySelector('[data-layer-toggle="quakes"]'); if(cb&&!cb.checked){cb.checked=true;cb.dispatchEvent(new Event('change',{bubbles:true}));} }
-    if (action==='night-mode' && $('nightToggle')) { $('nightToggle').checked=true;$('nightToggle').dispatchEvent(new Event('change',{bubbles:true})); }
+    if (action==='night-mode') { const mode=document.querySelector('[data-night-mode="anomaly"]'); if(mode)mode.click(); if($('nightToggle')){$('nightToggle').checked=true;$('nightToggle').dispatchEvent(new Event('change',{bubbles:true}));} }
     if (action==='kp') openTarget('#kpValue','space');
     if (action==='aurora') { openTarget('#moduleAurora','space');if($('auroraToggle')){$('auroraToggle').checked=true;$('auroraToggle').dispatchEvent(new Event('change',{bubbles:true}));} }
     if (action==='clouds') { const select=$('imageryMode');if(select){select.value='clouds';select.dispatchEvent(new Event('change',{bubbles:true}));openTarget('#map','earth');} }
