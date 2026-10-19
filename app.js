@@ -197,24 +197,27 @@ import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-int
     $('weatherLocate')?.addEventListener('click',locateUser);
 
     const categoryGroups={
-      earth:new Set(['earth','geology','disasters','ecology','oceans']),
-      weather:new Set(['weather','ecology','history']),
+      earth:new Set(['earth','geology','disasters','oceans','ecology']),
+      weather:new Set(['weather','history']),
       space:new Set(['space']),
-      transport:new Set(['transport']),
+      transport:new Set(['transport','maritime']),
       energy:new Set(['energy'])
     };
     function applyCategory(category){
-      const allowed=categoryGroups[category];
+      const allowed=categoryGroups[category]||categoryGroups.earth;
       document.querySelectorAll('[data-category]').forEach(b=>{
         const active=b.dataset.category===category;
         b.classList.toggle('active',active);
         b.setAttribute('aria-pressed',String(active));
       });
-      // The map is a permanent workspace. Tabs filter data panels only;
-      // category changes never hide the map or mutate the document structure.
       document.querySelectorAll('[data-module]').forEach(el=>{
         if(el.classList.contains('map-panel'))return;
-        el.hidden=!!allowed&&!allowed.has(el.dataset.module);
+        const visible=allowed.has(el.dataset.module);
+        el.hidden=!visible;
+        el.classList.toggle('category-screen-item',visible);
+      });
+      document.querySelectorAll('[data-category-screen]').forEach(screen=>{
+        screen.hidden=screen.dataset.categoryScreen!==category;
       });
       state.selectedCategory=category;
       if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
