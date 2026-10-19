@@ -1,4 +1,27 @@
 /* Leaflet map subsystem. It owns map state and layers, not dashboard data loading. */
+let leafletFallbackPromise = null;
+function ensureLeaflet() {
+  if (window.L) return Promise.resolve(true);
+  if (leafletFallbackPromise) return leafletFallbackPromise;
+  leafletFallbackPromise = new Promise((resolve) => {
+    const sources = [
+      'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'
+    ];
+    const load = (index) => {
+      if (window.L) { resolve(true); return; }
+      if (index >= sources.length) { resolve(false); return; }
+      const script = document.createElement('script');
+      script.src = sources[index];
+      script.crossOrigin = 'anonymous';
+      script.onload = () => window.L ? resolve(true) : load(index + 1);
+      script.onerror = () => { script.remove(); load(index + 1); };
+      document.head.appendChild(script);
+    };
+    load(0);
+  });
+  return leafletFallbackPromise;
+}
 export function initMap(deps) {
   const { state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES } = deps;
   const Leaflet = window.L;
@@ -9,7 +32,18 @@ export function initMap(deps) {
     return null;
   }
   if (!Leaflet) {
-    $status('mapStatus', 'MAP LIBRARY FAILED · CHECK NETWORK', 'error');
+    $status('mapStatus', 'ЗАГРУЗКА БИБЛИОТЕКИ КАРТЫ…', 'loading');
+    ensureLeaflet().then((loaded) => {
+      if (loaded) {
+        leafletFallbackPromise = null;
+        initMap(deps);
+      } else {
+        $status('mapStatus', 'MAP LIBRARY FAILED · CDN UNAVAILABLE', 'error');
+      }
+    }).catch((error) => {
+      console.error('[EMONITO map] Leaflet fallback failed:', error);
+      $status('mapStatus', 'MAP LIBRARY FAILED · CDN UNAVAILABLE', 'error');
+    });
     return null;
   }
 
