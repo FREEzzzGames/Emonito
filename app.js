@@ -158,6 +158,8 @@
   function setupControls(){
     $('refreshAll')?.addEventListener('click',refreshAll);
     $('weatherLocate')?.addEventListener('click',locateUser);
+    $('mobileLocate')?.addEventListener('click',locateUser);
+    $('mobileReset')?.addEventListener('click',()=>{state.location=null;if(state.map)state.map.setView([20,0],2);text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');loadWeather();loadAir();loadMarine();loadHistory();});
     const categoryGroups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};
     function applyCategory(category){
       const allowed=categoryGroups[category];
@@ -166,11 +168,6 @@
         if(el.classList.contains('map-panel')){el.hidden=false;return;}
         if(el.classList.contains('mobile-map-summary')){el.hidden=false;return;}
         el.hidden=category!=='all'&&!(allowed?.has(el.dataset.module)||el.dataset.module===category);
-      });
-      const mobileNav=document.getElementById('mobileNav');
-      mobileNav?.querySelectorAll('[data-nav-section]').forEach(b=>{
-        const active=b.dataset.navSection===category;
-        b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
       });
       state.selectedCategory=category;
       if(state.map)setTimeout(()=>state.map.invalidateSize({pan:false}),80);
@@ -219,7 +216,7 @@
   function setupMobileNavigation(){
     if(!window.matchMedia('(max-width: 760px)').matches)return;
     const grid=document.querySelector('.grid'), mapPanel=document.querySelector('.map-panel'), intro=document.querySelector('.intro');
-    if(!grid||!mapPanel||document.getElementById('mobileNav'))return;
+    if(!grid||!mapPanel)return;
 
     // Put the existing category filters directly under the app header.
     const toolbar=intro?.querySelector('.toolbar');
@@ -233,12 +230,10 @@
     if(side){[...side.children].forEach(card=>grid.insertBefore(card,side));side.remove();}
 
     // Map is the primary workspace; location actions become a readable summary card below it.
-    const mapNote=mapPanel.querySelector('.map-note');
     const summary=document.createElement('section');
     summary.className='mobile-map-summary panel';
     summary.innerHTML='<div class="summary-coordinate" id="mobileSelectedCoords">GLOBAL VIEW</div><div class="summary-hint">Нажмите на карту, чтобы посмотреть данные в выбранной точке</div><div class="summary-actions"><button id="mobileLocate" type="button">◎ МОЯ ГЕОЛОКАЦИЯ</button><button id="mobileReset" type="button">↺ СБРОС</button></div>';
     mapPanel.insertAdjacentElement('afterend',summary);
-    if(mapNote){mapNote.style.display='none';}
 
     // The same existing module elements are used; only their mobile presentation changes.
     const cards=[...grid.children].filter(el=>el!==mapPanel&&el!==summary);
