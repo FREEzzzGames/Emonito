@@ -1,0 +1,56 @@
+name: Browser smoke test
+on:
+  workflow_run:
+    workflows: ["Deploy Emonito to GitHub Pages"]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  mobile-smoke:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Verify published mobile interactions
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+          const pageErrors = [];
+          page.on('pageerror', error => pageErrors.push(error.message));
+          try {
+            const response = await page.goto('https://freezzzgames.github.io/Emonito/?smoke=' + Date.now(), { waitUntil: 'domcontentloaded', timeout: 60000 });
+            if (!response || !response.ok()) throw new Error('Pages response is not OK');
+            await page.waitForSelector('#map .leaflet-pane', { timeout: 30000 });
+            await page.waitForSelector('#emoAmbient', { timeout: 30000 });
+            const mapBox = await page.locator('#map').boundingBox();
+            if (!mapBox || mapBox.width < 250 || mapBox.height < 100) throw new Error('Map has invalid mobile dimensions');
+            await page.locator('#emoAmbient').click();
+            if (!(await page.locator('body').evaluate(el => el.classList.contains('emo-ambient-mode')))) throw new Error('Ambient mode did not activate');
+            await page.locator('#emoAmbient').click();
+            if (await page.locator('body').evaluate(el => el.classList.contains('emo-ambient-mode'))) throw new Error('Ambient mode did not exit');
+            await page.locator('#map').click({ position: { x: Math.round(mapBox.width / 2), y: Math.round(mapBox.height / 2) } });
+            await page.waitForFunction(() => {
+              const el = document.querySelector('#emoInspector');
+              return el && !el.hidden;
+            }, { timeout: 15000 });
+            await page.locator('#layerMenuToggle').click();
+            if (await page.locator('#layerMenuToggle').getAttribute('aria-expanded') !== 'true') throw new Error('Layer menu did not open');
+            await page.locator('[data-category="weather"]').click();
+            if (await page.locator('#environmentWatch').evaluate(el => el.classList.contains('category-screen-hidden'))) throw new Error('Weather category did not reveal environment panel');
+            if (pageErrors.length) throw new Error('Browser runtime errors: ' + pageErrors.join(' | '));
+            console.log('PASS: published page, mobile map, geo-inspector, layer menu, category navigation and ambient mode.');
+          } finally {
+            await browser.close();
+          }
+          NODE
