@@ -3,6 +3,7 @@ import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './confi
 import { createApi } from './api.js?v=api-rewrite-1';
 import { initMap as initializeMap } from './map.js?v=map-rewrite-1';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
+import { initMonitoringModules } from './modules.js?v=modules-1';
 (() => {
   const $ = id => document.getElementById(id);
   const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
@@ -457,6 +458,7 @@ import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
     safe('mobile navigation',setupMobileNavigation);
     safe('onboarding',initOnboarding);
     safe('map',()=>initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES}));
+    safe('new monitoring modules',()=>initMonitoringModules({state}));
     safe('default category',()=>document.querySelector('[data-category="earth"]')?.click());
     safe('clock',()=>{setClock();setInterval(()=>safe('clock tick',setClock),1000);});
     safe('data refresh',()=>{
