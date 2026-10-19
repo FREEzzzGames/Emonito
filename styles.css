@@ -585,3 +585,41 @@ body.onboarding-open{overflow:hidden}
     font-size: 11px;
   }
 }
+
+/* Keep floating controls separate and out of the map's visual center. */
+.help-tour {
+  top: auto;
+  right: 12px;
+  bottom: calc(126px + env(safe-area-inset-bottom));
+  min-width: 0;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 9px;
+  gap: 5px;
+  border-radius: 6px;
+  background: rgba(17, 26, 31, .70);
+  border-color: rgba(61, 86, 97, .72);
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  opacity: .70;
+  font-size: 12px;
+}
+.help-tour span { font-size: 9px; }
+.map-fab {
+  right: 12px;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  opacity: 0;
+}
+.map-fab.is-visible { opacity: .70; }
+@media (max-width: 640px) {
+  .help-tour {
+    right: 10px;
+    bottom: calc(124px + env(safe-area-inset-bottom));
+    min-height: 32px;
+    height: 32px;
+    padding: 0 8px;
+  }
+  .map-fab {
+    right: 10px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+}
