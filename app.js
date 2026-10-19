@@ -213,12 +213,14 @@ import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-int
       document.querySelectorAll('[data-module]').forEach(el=>{
         if(el.classList.contains('map-panel'))return;
         const visible=allowed.has(el.dataset.module);
-        el.hidden=!visible;
+        el.classList.toggle('category-screen-hidden',!visible);
         el.classList.toggle('category-screen-item',visible);
       });
       document.querySelectorAll('[data-category-screen]').forEach(screen=>{
         screen.hidden=screen.dataset.categoryScreen!==category;
       });
+      const side=document.querySelector('.side');
+      if(side)side.classList.toggle('category-screen-hidden',!side.querySelector('[data-module]:not(.category-screen-hidden)'));
       state.selectedCategory=category;
       if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
     }
@@ -227,9 +229,7 @@ import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-int
       btn.addEventListener('click',e=>{
         e.preventDefault();
         applyCategory(btn.dataset.category);
-        if(window.matchMedia('(max-width: 760px)').matches){
-          btn.scrollIntoView({block:'nearest',inline:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-        }
+
       });
     });
     $('imageryMode')?.addEventListener('change',e=>{
