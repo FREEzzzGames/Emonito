@@ -2,7 +2,7 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'all', issHistory:[] };
+  const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'all', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
   const SOURCES = {
     usgs:'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
     eonet:'https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=100',
@@ -51,7 +51,18 @@
     const clouds=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_Cloud_Top_Temp_Day',format:'image/png',transparent:true,version:'1.1.1',attribution:'NASA GIBS'});
     base.on('tileload',()=>{$status('mapStatus','STREET MAP OK','ok');});base.on('tileerror',()=>{$status('mapStatus','TILE ERROR · CHECK NETWORK','error');});satellite.on('tileload',()=>{$status('mapStatus','NASA IMAGERY LOADED','ok');});satellite.on('tileerror',()=>{$status('mapStatus','NASA IMAGERY UNAVAILABLE','error');});clouds.on('tileerror',()=>{$status('mapStatus','CLOUD LAYER UNAVAILABLE','error');});state.map=map;state.layers={base,satellite,clouds,quakes:L.layerGroup().addTo(map),events:L.layerGroup().addTo(map),iss:L.layerGroup().addTo(map),issTrail:L.layerGroup().addTo(map),air:L.layerGroup(),transport:L.layerGroup(),aircraft:L.layerGroup(),energy:L.layerGroup()};
     L.control.layers({'Street map':base,'NASA satellite imagery':satellite},{'Cloud-top temperature':clouds,'Earthquakes':state.layers.quakes,'Natural events':state.layers.events,'ISS position':state.layers.iss,'ISS sampled trail':state.layers.issTrail,'Transport data':state.layers.transport,'Aircraft (OpenSky)':state.layers.aircraft,'Energy infrastructure':state.layers.energy},{collapsed:true,position:'topright'}).addTo(map);
-    map.on('click',e=>{state.location={latitude:e.latlng.lat,longitude:e.latlng.lng};text('selectedCoords',fmt(e.latlng.lat,3)+'°, '+fmt(e.latlng.lng,3)+'°');loadWeather();loadAir();loadMarine();loadHistory();});
+    map.on('click',async e=>{
+      const point={latitude:e.latlng.lat,longitude:e.latlng.lng};state.location=point;
+      text('selectedCoords',fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°');
+      const popup=L.popup({maxWidth:280}).setLatLng(e.latlng).setContent('<div class="map-popup"><strong>Сводка по точке</strong><p>Загружаем погоду…</p><p>Сейсмика: поиск ближайших событий…</p><p>Космическая погода: '+esc($('kpValue')?.textContent||'—')+' Kp</p></div>').openOn(map);
+      const nearby=(state.quakeFeatures||[]).map(f=>{const c=f.geometry?.coordinates||[];if(c.length<2)return null;const dlat=(c[1]-point.latitude)*Math.PI/180,dlon=(c[0]-point.longitude)*Math.PI/180;const a=Math.sin(dlat/2)**2+Math.cos(point.latitude*Math.PI/180)*Math.cos(c[1]*Math.PI/180)*Math.sin(dlon/2)**2;return {f,km:6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))};}).filter(Boolean).sort((a,b)=>a.km-b.km)[0];
+      let weather='Погода: данные недоступны';
+      try{const d=await fetchJson(SOURCES.weather+'?latitude='+point.latitude+'&longitude='+point.longitude+'&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&timezone=auto');const c=d.current||{};weather='Погода: '+fmt(c.temperature_2m,1)+' °C · влажность '+fmt(c.relative_humidity_2m,0)+'% · ветер '+fmt(c.wind_speed_10m,1)+' км/ч';}catch{}
+      const quake=nearby&&nearby.km<500?'Ближайшее землетрясение: M '+fmt(nearby.f.properties?.mag,1)+' · '+Math.round(nearby.km)+' км · '+esc(nearby.f.properties?.place||'место неизвестно'):'В радиусе 500 км нет событий в загруженном фиде за 24 часа';
+      const kp='Космическая погода: Kp '+esc($('kpValue')?.textContent||'—');
+      if(state.map&&popup.isOpen())popup.setContent('<div class="map-popup"><strong>Сводка · '+fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°</strong><p>'+esc(weather)+'</p><p>'+quake+'</p><p>'+kp+'</p><button type="button" class="popup-details" onclick="document.getElementById(\'weatherLocate\')?.click()">Обновить данные точки</button></div>');
+      loadWeather();loadAir();loadMarine();loadHistory();
+    });
     $('mapLocate').addEventListener('click',()=>locateUser());
     $('mapReset').addEventListener('click',()=>map.setView([20,0],2));
     $status('mapStatus','MAP READY','ok');
@@ -59,10 +70,10 @@
   function popupLink(title,detail,href){return '<strong>'+esc(title)+'</strong><br>'+esc(detail)+(href?'<br><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'');}
   async function loadQuakes(){
     $status('quakeStatus','LOADING');
-    try{const d=await fetchJson(SOURCES.usgs);const features=d.features||[];text('quakeCount',features.length);
-      const sorted=[...features].sort((a,b)=>(b.properties?.mag||0)-(a.properties?.mag||0));
+    try{const d=await fetchJson(SOURCES.usgs);const features=d.features||[];state.quakeFeatures=features;text('quakeCount',features.filter(f=>Date.now()-(f.properties?.time||0)<=state.quakeWindowHours*3600000).length);
+      const filtered=features.filter(f=>Date.now()-(f.properties?.time||0)<=state.quakeWindowHours*3600000);const sorted=[...filtered].sort((a,b)=>(b.properties?.mag||0)-(a.properties?.mag||0));
       setList('quakeList',sorted.slice(0,8).map(f=>{const p=f.properties||{},c=f.geometry?.coordinates||[];return makeRow(p.place||'Unknown location','Depth '+fmt(c[2],1)+' km · '+dateTime(p.time),'M '+fmt(p.mag,1),p.url)}),'No earthquakes reported in this period.');
-      const group=state.layers.quakes;if(group){group.clearLayers();features.forEach(f=>{const p=f.properties||{},c=f.geometry?.coordinates||[];if(!state.map||c.length<2)return;const m=L.circleMarker([c[1],c[0]],{radius:Math.max(4,Math.min(13,3+(Number(p.mag)||0)*1.4)),color:(p.mag||0)>=5?'#ff5f5f':'#e6d34b',weight:1,fillOpacity:.55});m.bindPopup(popupLink('Magnitude '+fmt(p.mag,1),p.place+' · depth '+fmt(c[2],1)+' km',p.url));m.addTo(group);});}
+      const group=state.layers.quakes;if(group){group.clearLayers();filtered.forEach(f=>{const p=f.properties||{},c=f.geometry?.coordinates||[];if(!state.map||c.length<2)return;const m=L.circleMarker([c[1],c[0]],{radius:Math.max(4,Math.min(13,3+(Number(p.mag)||0)*1.4)),color:(p.mag||0)>=5?'#ff5f5f':'#e6d34b',weight:1,fillOpacity:.55});m.bindPopup(popupLink('Magnitude '+fmt(p.mag,1),p.place+' · depth '+fmt(c[2],1)+' km',p.url));m.addTo(group);});}
       text('quakePeak','M '+fmt(sorted[0]?.properties?.mag,1));$status('quakeStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');
     }catch(e){$status('quakeStatus','UNAVAILABLE','error');setList('quakeList',[],'USGS unavailable: '+e.message);text('quakeCount','—');}
   }
@@ -166,7 +177,42 @@
     }
     document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>applyCategory(btn.dataset.category)));
     $('imageryMode')?.addEventListener('change',e=>{if(!state.map)return;state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);});
-    $('mapRefreshTransport')?.addEventListener('click',()=>{loadTransport();loadAircraft();});
+    $('mapRefreshTransport')?.addEventListener('click',()=>{zoomToTransport();});
+    $('layerMenuToggle')?.addEventListener('click',()=>{const menu=$('layerMenu'),button=$('layerMenuToggle');if(!menu)return;menu.hidden=!menu.hidden;button.setAttribute('aria-expanded',String(!menu.hidden));});
+    document.querySelectorAll('[data-layer-toggle]').forEach(input=>input.addEventListener('change',()=>{
+      const key=input.dataset.layerToggle,layer=state.layers[key];
+      if(key==='satellite'||key==='clouds'){
+        const mode=$('imageryMode');if(input.checked){if(key==='satellite'&&mode)mode.value='satellite';if(key==='clouds'&&mode)mode.value='clouds';layer?.addTo(state.map);}
+        else{if(layer&&state.map.hasLayer(layer))state.map.removeLayer(layer);if(mode&&mode.value===key)mode.value='street';if(key==='satellite'&&state.map.hasLayer(state.layers.clouds))state.map.removeLayer(state.layers.clouds);if(key==='clouds'&&state.map.hasLayer(state.layers.satellite))state.map.removeLayer(state.layers.satellite);}
+        return;
+      }
+      if(!layer||!state.map)return;
+      if(input.checked){layer.addTo(state.map);if(key==='transport')zoomToTransport(false);if(key==='aircraft')zoomToTransport(false);}
+      else if(state.map.hasLayer(layer))state.map.removeLayer(layer);
+    }));
+    $('quakeTimeline')?.addEventListener('change',e=>{state.quakeWindowHours=Number(e.target.value)||24;loadQuakes();});
+    addStatusActions();
+  }
+  function zoomToTransport(load=true){
+    if(!state.map)return;
+    const current=state.map.getZoom(),target=Math.max(5,current);
+    if(current<5){state.map.flyTo(state.map.getCenter(),5,{animate:true,duration:0.8});state.map.once('moveend',()=>{if(load){loadTransport();loadAircraft();}});}
+    else if(load){loadTransport();loadAircraft();}
+  }
+  function addStatusActions(){
+    const retryMap={energyStatus:loadEnergy,transportStatus:()=>zoomToTransport(),aircraftStatus:()=>zoomToTransport(),weatherStatus:loadWeather,airStatus:loadAir,quakeStatus:loadQuakes,eventStatus:loadEvents,spaceStatus:loadSpaceWeather,issStatus:loadISS,neoStatus:loadNEO,marineStatus:loadMarine,historyStatus:loadHistory};
+    const enhance=status=>{
+      const id=status.id,handler=retryMap[id];if(!handler)return;
+      const text=status.textContent||'',needsRetry=status.classList.contains('error')||/UNAVAILABLE|RATE LIMITED|ZOOM TO LEVEL/i.test(text);
+      let actions=status.parentElement?.querySelector(':scope > .status-actions');
+      if(!needsRetry){actions?.remove();return;}
+      if(!actions){actions=document.createElement('span');actions.className='status-actions';status.insertAdjacentElement('afterend',actions);}
+      if(!actions.querySelector('.status-info')){const info=document.createElement('button');info.type='button';info.className='status-info';info.textContent='ⓘ';info.title='Источник временно недоступен или требует более крупного масштаба. Повторите запрос позже либо приблизьте карту.';info.setAttribute('aria-label',info.title);actions.append(info);}
+      if(!actions.querySelector('.status-retry')){const retry=document.createElement('button');retry.type='button';retry.className='status-retry';retry.textContent=/ZOOM TO LEVEL/i.test(text)?'Приблизить':'Повторить';retry.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();handler();});actions.append(retry);}
+    };
+    document.querySelectorAll('.status[id]').forEach(enhance);
+    const observer=new MutationObserver(records=>records.forEach(record=>{const el=record.target.nodeType===1?record.target:record.target.parentElement;if(el?.matches?.('.status[id]'))enhance(el);else el?.closest?.('.status[id]')&&enhance(el.closest('.status[id]'));}));
+    document.querySelectorAll('.status[id]').forEach(el=>observer.observe(el,{attributes:true,attributeFilter:['class'],childList:true,characterData:true,subtree:true}));
   }
   async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather(),loadNEO(),loadTransport(),loadAircraft(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
 
