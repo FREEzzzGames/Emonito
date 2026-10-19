@@ -23,6 +23,7 @@ jobs:
           from html.parser import HTMLParser
           from pathlib import Path
           import re, sys
+
           class Parser(HTMLParser):
               def __init__(self):
                   super().__init__()
@@ -34,12 +35,19 @@ jobs:
                           if value in self.ids:
                               self.errors.append('duplicate id: ' + value)
                           self.ids.add(value)
+
           html = Path('index.html').read_text()
           parser = Parser()
           parser.feed(html)
           parser.close()
           js = Path('app.js').read_text()
-          refs = set(re.findall(r"\$\(['\"]([A-Za-z][A-Za-z0-9_-]*)['\"]\)", js))
+          patterns = [
+              r"\$\(['\"]([A-Za-z][A-Za-z0-9_-]*)['\"]\)",
+              r"(?:\$status|text|setList)\(['\"]([A-Za-z][A-Za-z0-9_-]*)['\"]"
+          ]
+          refs = set()
+          for pattern in patterns:
+              refs.update(re.findall(pattern, js))
           missing = sorted(refs - parser.ids)
           if parser.errors or missing:
               print('HTML errors:', parser.errors)
