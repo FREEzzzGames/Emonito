@@ -480,7 +480,7 @@ import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-int
     safe('planet explorer',()=>initPlanetExplorer({state}));
     safe('local zenith',()=>initLocalZenith({state, fetchJson, SOURCES, text, fmt, $status}));
     safe('ambient engine',()=>initAmbientEngine());
-    safe('satellite intercept',()=>initSatelliteIntercept({state, $status}));
+    safe('satellite intercept',()=>initSatelliteIntercept({state}));
     safe('default category',()=>document.querySelector('[data-category="earth"]')?.click());
     safe('clock',()=>{setClock();setInterval(()=>safe('clock tick',setClock),1000);});
     safe('data refresh',()=>{
