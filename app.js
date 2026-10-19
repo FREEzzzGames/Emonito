@@ -168,8 +168,17 @@
   function setupControls(){
     $('refreshAll')?.addEventListener('click',refreshAll);
     $('weatherLocate')?.addEventListener('click',locateUser);
-    $('mobileLocate')?.addEventListener('click',locateUser);
-    $('mobileReset')?.addEventListener('click',()=>{state.location=null;if(state.map)state.map.setView([20,0],2);text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');loadWeather();loadAir();loadMarine();loadHistory();});
+    // These controls are created later by setupMobileNavigation(); delegate clicks
+    // so they work even though the buttons do not exist during setupControls().
+    document.addEventListener('click',e=>{
+      if(e.target.closest('#mobileLocate'))locateUser();
+      if(e.target.closest('#mobileReset')){
+        state.location=null;
+        if(state.map)state.map.setView([20,0],2);
+        text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');
+        loadWeather();loadAir();loadMarine();loadHistory();
+      }
+    });
     const categoryGroups={
       earth:new Set(['earth','geology','disasters','ecology','oceans']),
       weather:new Set(['weather','ecology','history']),
@@ -192,11 +201,28 @@
       const showMap=!mobile||category==='earth'||category==='transport';
       if(mapPanel)mapPanel.hidden=!showMap;
       if(mapSummary)mapSummary.hidden=!showMap;
-      document.querySelectorAll('[data-module]').forEach(el=>{
+      const modules=[...document.querySelectorAll('[data-module]')];
+      modules.forEach(el=>{
         if(el.classList.contains('map-panel'))return;
         el.hidden=!!allowed&&!allowed.has(el.dataset.module);
       });
       state.selectedCategory=category;
+      if(mobile){
+        // A category switch must expose usable content immediately, not leave
+        // every matching card collapsed below the fold.
+        document.querySelectorAll('.mobile-accordion.expanded').forEach(card=>{
+          card.classList.remove('expanded');
+          card.querySelector('.mobile-accordion-head')?.setAttribute('aria-expanded','false');
+        });
+        const firstVisible=modules.find(el=>!el.classList.contains('map-panel')&&!el.hidden);
+        if(firstVisible){
+          firstVisible.classList.add('expanded');
+          firstVisible.querySelector('.mobile-accordion-head')?.setAttribute('aria-expanded','true');
+          requestAnimationFrame(()=>firstVisible.scrollIntoView({block:'start',behavior:'auto'}));
+        }else if(showMap){
+          requestAnimationFrame(()=>mapPanel?.scrollIntoView({block:'start',behavior:'auto'}));
+        }
+      }
       if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
     }
     document.querySelectorAll('[data-category]').forEach(btn=>{
