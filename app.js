@@ -147,7 +147,7 @@
   function setupControls(){
     $('refreshAll')?.addEventListener('click',refreshAll);
     $('weatherLocate')?.addEventListener('click',locateUser);
-    document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b===btn));const category=btn.dataset.category;document.querySelectorAll('[data-module]').forEach(el=>{el.hidden=category!=='all'&&el.dataset.module!==category;});}));
+    document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b===btn));const category=btn.dataset.category;const groups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};const allowed=groups[category];document.querySelectorAll('[data-module]').forEach(el=>{el.hidden=category!=='all'&&!(allowed?.has(el.dataset.module)||el.dataset.module===category);});}));
     $('imageryMode')?.addEventListener('change',e=>{if(!state.map)return;state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);});
     $('mapRefreshTransport')?.addEventListener('click',()=>{loadTransport();loadAircraft();});
   }
