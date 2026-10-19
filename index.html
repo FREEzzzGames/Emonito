@@ -116,6 +116,45 @@
 </section>
 </main>
 
+
+<section class="panel earth-watch-panel" id="environmentWatch" data-module="weather">
+  <div class="head"><span class="title">21 / LOCAL ENVIRONMENT · POINT MONITOR</span><span class="status" id="envStatus">ОЖИДАНИЕ</span></div>
+  <div class="earth-watch-toolbar"><span>Точка: <strong id="envPoint">48.890°, 8.700°</strong></span><div><button type="button" id="envUseMap">◎ Точка карты</button><button type="button" id="envLocate">⌖ Моё место</button><button type="button" id="envRefresh">↻ Обновить</button></div></div>
+  <div class="earth-watch-metrics">
+    <article><span>ТЕМПЕРАТУРА</span><strong id="envTemp">—</strong><small id="envHumidity">Влажность —</small></article>
+    <article><span>ОСАДКИ / ВЕТЕР</span><strong id="envRain">—</strong><small id="envWind">Ветер —</small></article>
+    <article><span>УФ-ИНДЕКС</span><strong id="envUv">—</strong><small id="envUvMax">UV max —</small></article>
+    <article><span>ВОЗДУХ · EUROPEAN AQI</span><strong id="envAqi">—</strong><small id="envAirTime">Время источника —</small></article>
+    <article><span>ВЫСОТА</span><strong id="envElevation">—</strong><small>Модель высоты Open-Meteo</small></article>
+    <article><span>РАССВЕТ / ЗАКАТ</span><strong id="envSun">—</strong><small>Локальное время точки</small></article>
+  </div>
+  <div class="earth-watch-detail-grid">
+    <div><strong>Загрязнители воздуха</strong><p>PM2.5 <b id="envPm25">—</b> · PM10 <b id="envPm10">—</b></p><p>NO₂ <b id="envNo2">—</b> · O₃ <b id="envOzone">—</b></p></div>
+    <div><strong>Пыльца · прогноз для поддерживаемых регионов</strong><p id="envPollen">Загрузка пыльцевых данных…</p></div>
+  </div>
+  <p class="local-radar-note">Погода и пыльца могут быть модельными прогнозами, а не измерениями ближайшей станции. Отсутствующие переменные и регионы без покрытия показываются как недоступные. Источник: Open-Meteo.</p>
+</section>
+
+<section class="panel earth-watch-panel" id="spaceWeatherWatch" data-module="space">
+  <div class="head"><span class="title">22 / SPACE WEATHER · SOLAR FLARES</span><span class="status" id="flareStatus">ОЖИДАНИЕ</span></div>
+  <div class="earth-watch-toolbar"><span>NOAA SWPC · GOES X-ray flux, последние 6 часов</span><button type="button" id="flareRefresh">↻ Обновить космическую погоду</button></div>
+  <div class="earth-watch-metrics space-weather-metrics">
+    <article><span>ТЕКУЩИЙ КЛАСС ПОТОКА</span><strong id="flareClass">—</strong><small id="flareFlux">Ожидание измерения</small></article>
+    <article><span>ПИК В СРЕЗЕ</span><strong id="flarePeak">—</strong><small>GOES X-ray 0.1–0.8 nm</small></article>
+    <article><span>ГЕОМАГНИТНАЯ АКТИВНОСТЬ</span><strong id="kpValueWatch">Связанный модуль Kp</strong><small>Существующий показатель NOAA Kp в разделе SPACE</small></article>
+  </div>
+  <div class="head earth-watch-subhead"><span class="title">NOAA SWPC · ALERT FEED</span><span class="status" id="spaceAlertsStatus">ОЖИДАНИЕ</span></div>
+  <ul class="list" id="spaceAlerts"><li class="empty">Загрузка официальных предупреждений NOAA…</li></ul>
+  <p class="local-radar-note">Классы A/B/C/M/X рассчитываются по потоку рентгеновского излучения GOES. Класс потока не равен отдельному подтверждённому событию вспышки; предупреждения приведены из ленты NOAA. Возможные последствия для связи — риск, не гарантия сбоя.</p>
+</section>
+
+<section class="panel earth-watch-panel" id="infrastructureWatch" data-module="transport">
+  <div class="head"><span class="title">23 / INFRASTRUCTURE WATCH · GERMANY</span><span class="status" id="infraStatus">ОЖИДАНИЕ</span></div>
+  <div class="earth-watch-toolbar"><span id="infraCoverage">Проверка доступных источников…</span><button type="button" id="infraRefresh">↻ Обновить каталог</button></div>
+  <ul class="list" id="infraSources"><li class="empty">Проверка каталога первоисточников…</li></ul>
+  <p class="local-radar-note" id="infraNotice">Здесь отображаются только подтверждённые возможности источников. Наличие официальной страницы не означает, что её события уже загружаются в карту автоматически.</p>
+</section>
+
 <section class="panel local-radar-panel" id="localRadarPanel" data-module="space">
   <div class="head"><span class="title">18 / LOCAL ZENITH · OVERHEAD RADAR</span><span class="status" id="localRadarStatus">ОЖИДАНИЕ</span></div>
   <div class="local-radar-toolbar"><button type="button" id="localRadarLocate">◎ Определить моё место</button><button type="button" id="localRadarUseMap">Использовать выбранную точку карты</button></div>
