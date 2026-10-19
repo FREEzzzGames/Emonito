@@ -1,32 +1,19 @@
 /* EMONITO — open-data monitoring dashboard. No secrets are embedded. */
-'use strict';
+import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
+import { createApi } from './api.js';
+import { initMap as initializeMap } from './map.js';
+import { setupMobileCollapsibles } from './ui.js';
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'all', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
-  const SOURCES = {
-    usgs:'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
-    eonet:'https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=100',
-    iss:'https://api.wheretheiss.at/v1/satellites/25544',
-    weather:'https://api.open-meteo.com/v1/forecast',
-    air:'https://air-quality-api.open-meteo.com/v1/air-quality',
-    swpc:'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
-    solar:'https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json',
-    neo:'https://api.nasa.gov/neo/rest/v1/feed?api_key=DEMO_KEY',
-    openSky:'https://opensky-network.org/api/states/all',
-    energy:'https://ourworldindata.org/grapher/electricity-prod-source-stacked.csv'
-  };
+  const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
+  const SOURCES = SOURCE_CONFIG;
   const $status = (id, text, mode='') => { const el=$(id); if(!el)return; el.textContent=text; el.className='status '+mode; };
   const text = (id, value) => { if($(id)) $(id).textContent = value == null ? '—' : String(value); };
   const fmt = (n,d=1) => Number.isFinite(Number(n)) ? Number(n).toFixed(d) : '—';
   const dateTime = value => value ? new Date(value).toLocaleString() : 'Time unavailable';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  async function fetchJson(url, timeout=14000) {
-    const previous=state.requests.get(url); if(previous) previous.abort();
-    const controller=new AbortController(); state.requests.set(url,controller);
-    const timer=setTimeout(()=>controller.abort(),timeout);
-    try { const response=await fetch(url,{signal:controller.signal,headers:{Accept:'application/json'}}); if(!response.ok) throw new Error('HTTP '+response.status); return await response.json(); }
-    finally { clearTimeout(timer); if(state.requests.get(url)===controller)state.requests.delete(url); }
-  }
+  const fetchJson = createApi(state.requests);
+
   function setList(id, items, empty='No data available') {
     const el=$(id); if(!el)return; el.replaceChildren();
     if(!items.length){const li=document.createElement('li');li.className='empty';li.textContent=empty;el.append(li);return;}
@@ -42,30 +29,7 @@
     if(value){const right=document.createElement('div');right.className='row-value';right.textContent=value;li.append(right);}
     return li;
   }
-  function initMap(){
-    if(!window.L){$status('mapStatus','MAP LIBRARY FAILED','error');return;}
-    const map=L.map('map',{worldCopyJump:true,preferCanvas:true,zoomControl:false,minZoom:2}).setView([20,0],2);
-    L.control.zoom({position:'bottomright'}).addTo(map);
-    const base=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-    const satellite=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_CorrectedReflectance_TrueColor',format:'image/jpeg',transparent:false,version:'1.1.1',time:new Date(Date.now()-86400000).toISOString().slice(0,10),attribution:'NASA GIBS / EOSDIS',tileSize:256});
-    const clouds=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_Cloud_Top_Temp_Day',format:'image/png',transparent:true,version:'1.1.1',attribution:'NASA GIBS'});
-    base.on('tileload',()=>{$status('mapStatus','STREET MAP OK','ok');});base.on('tileerror',()=>{$status('mapStatus','TILE ERROR · CHECK NETWORK','error');});satellite.on('tileload',()=>{$status('mapStatus','NASA IMAGERY LOADED','ok');});satellite.on('tileerror',()=>{$status('mapStatus','NASA IMAGERY UNAVAILABLE','error');});clouds.on('tileerror',()=>{$status('mapStatus','CLOUD LAYER UNAVAILABLE','error');});state.map=map;state.layers={base,satellite,clouds,quakes:L.layerGroup().addTo(map),events:L.layerGroup().addTo(map),iss:L.layerGroup().addTo(map),issTrail:L.layerGroup().addTo(map),air:L.layerGroup(),transport:L.layerGroup(),aircraft:L.layerGroup(),energy:L.layerGroup()};
-    map.on('click',async e=>{
-      const point={latitude:e.latlng.lat,longitude:e.latlng.lng};state.location=point;
-      text('selectedCoords',fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°');text('mobileSelectedCoords',fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°');
-      const popup=L.popup({maxWidth:280}).setLatLng(e.latlng).setContent('<div class="map-popup"><strong>Сводка по точке</strong><p>Загружаем погоду…</p><p>Сейсмика: поиск ближайших событий…</p><p>Космическая погода: '+esc($('kpValue')?.textContent||'—')+' Kp</p></div>').openOn(map);
-      const nearby=(state.quakeFeatures||[]).map(f=>{const c=f.geometry?.coordinates||[];if(c.length<2)return null;const dlat=(c[1]-point.latitude)*Math.PI/180,dlon=(c[0]-point.longitude)*Math.PI/180;const a=Math.sin(dlat/2)**2+Math.cos(point.latitude*Math.PI/180)*Math.cos(c[1]*Math.PI/180)*Math.sin(dlon/2)**2;return {f,km:6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))};}).filter(Boolean).sort((a,b)=>a.km-b.km)[0];
-      let weather='Погода: данные недоступны';
-      try{const d=await fetchJson(SOURCES.weather+'?latitude='+point.latitude+'&longitude='+point.longitude+'&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&timezone=auto');const c=d.current||{};weather='Погода: '+fmt(c.temperature_2m,1)+' °C · влажность '+fmt(c.relative_humidity_2m,0)+'% · ветер '+fmt(c.wind_speed_10m,1)+' км/ч';}catch{}
-      const quake=nearby&&nearby.km<500?'Ближайшее землетрясение: M '+fmt(nearby.f.properties?.mag,1)+' · '+Math.round(nearby.km)+' км · '+esc(nearby.f.properties?.place||'место неизвестно'):'В радиусе 500 км нет событий в загруженном фиде за 24 часа';
-      const kp='Космическая погода: Kp '+esc($('kpValue')?.textContent||'—');
-      if(state.map&&popup.isOpen())popup.setContent('<div class="map-popup"><strong>Сводка · '+fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°</strong><p>'+esc(weather)+'</p><p>'+quake+'</p><p>'+kp+'</p></div>');
-      loadWeather();loadAir();loadMarine();loadHistory();
-    });
-    $('mapLocate').addEventListener('click',()=>locateUser());
-    $('mapReset').addEventListener('click',()=>{state.location=null;map.setView([20,0],2);text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');loadWeather();loadAir();loadMarine();loadHistory();});
-    $status('mapStatus','MAP READY','ok');
-  }
+
   function popupLink(title,detail,href){return '<strong>'+esc(title)+'</strong><br>'+esc(detail)+(href?'<br><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'');}
   async function loadQuakes(){
     $status('quakeStatus','LOADING');
@@ -94,7 +58,7 @@
     }catch(e){['issLat','issLon','issAlt','issSpeed'].forEach(id=>text(id,'—'));$status('issStatus','UNAVAILABLE','error');setList('issList',[],'ISS provider unavailable: '+e.message);}
   }
   async function loadWeather(){
-    const loc=state.location||{latitude:48.89,longitude:8.70};$status('weatherStatus','LOADING');
+    const loc=state.location||DEFAULT_LOCATION;$status('weatherStatus','LOADING');
     const url=SOURCES.weather+'?latitude='+loc.latitude+'&longitude='+loc.longitude+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=temperature_2m,precipitation,wind_speed_10m&past_days=7&forecast_days=3&timezone=auto';
     try{const d=await fetchJson(url);const c=d.current;if(!c)throw new Error('No current conditions');text('weatherTemp',fmt(c.temperature_2m,1)+'°C');text('weatherFeels',fmt(c.apparent_temperature,1)+'°C feels like');text('weatherWind',fmt(c.wind_speed_10m,1)+' km/h');text('weatherPressure',fmt(c.surface_pressure,0)+' hPa');text('weatherHumidity',fmt(c.relative_humidity_2m,0)+'%');text('weatherRain',fmt(c.precipitation,1)+' mm');text('weatherUpdated',dateTime(c.time));text('selectedCoords',fmt(loc.latitude,3)+'°, '+fmt(loc.longitude,3)+'°');text('mobileSelectedCoords',fmt(loc.latitude,3)+'°, '+fmt(loc.longitude,3)+'°');drawHistory(d.hourly);$status('weatherStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');}
     catch(e){$status('weatherStatus','UNAVAILABLE','error');['weatherTemp','weatherFeels','weatherWind','weatherPressure','weatherHumidity','weatherRain'].forEach(id=>text(id,'—'));text('weatherUpdated','Source unavailable: '+e.message);}
@@ -126,7 +90,7 @@
   }
   async function loadMarine(){
     $status('marineStatus','LOADING');
-    const loc=state.location||{latitude:20,longitude:0};
+    const loc=state.location||{latitude:GLOBAL_VIEW.latitude,longitude:GLOBAL_VIEW.longitude};
     try{const url='https://marine-api.open-meteo.com/v1/marine?latitude='+loc.latitude+'&longitude='+loc.longitude+'&current=wave_height,wave_direction,wave_period&daily=wave_height_max&forecast_days=3&timezone=auto';const d=await fetchJson(url);const c=d.current||{};text('waveHeight',Number.isFinite(Number(c.wave_height))?fmt(c.wave_height,2)+' m':'—');text('waveDirection',Number.isFinite(Number(c.wave_direction))?fmt(c.wave_direction,0)+'°':'—');text('wavePeriod',Number.isFinite(Number(c.wave_period))?fmt(c.wave_period,1)+' s':'—');const dates=d.daily?.time||[],max=d.daily?.wave_height_max||[];setList('marineList',dates.map((day,i)=>makeRow('Wave forecast',day,Number.isFinite(Number(max[i]))?fmt(max[i],2)+' m max':'—')),'Marine model returned no forecast.');$status('marineStatus','MODEL DATA · OPEN-METEO','ok');}
     catch(e){['waveHeight','waveDirection','wavePeriod'].forEach(id=>text(id,'—'));setList('marineList',[],'Marine API unavailable at this location. Ocean variables may be unavailable over land.');$status('marineStatus','UNAVAILABLE','error');}
   }
@@ -257,12 +221,13 @@
   async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather(),loadNEO(),loadTransport(),loadAircraft(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
 
   function setupMobileNavigation(){
+    setupMobileCollapsibles();
     // Keep the original document structure. No DOM reparenting, generated
     // accordions, duplicate controls, or mobile-only navigation state.
     const resizeMap=()=>{if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));};
     window.addEventListener('resize',resizeMap,{passive:true});
     window.addEventListener('orientationchange',resizeMap,{passive:true});
   }
-  function start(){setupControls();setupMobileNavigation();initMap();document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
+  function start(){setupControls();setupMobileNavigation();initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES});document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
