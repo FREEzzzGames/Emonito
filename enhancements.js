@@ -126,7 +126,7 @@ export function initEnhancements({ state }) {
     });
   }
   function workerUrlFor(raw) {
-    let base = ''; try { base = (localStorage.getItem('emonito:edge-api-base') || '').trim().replace(/\\/$/, ''); } catch {}
+    let base = ''; try { base = (localStorage.getItem('emonito:edge-api-base') || '').trim(); if (base.endsWith('/')) base = base.slice(0, -1); } catch {}
     if (!base) return null;
     const source = new URL(raw); let route = null;
     if (source.hostname === 'api.open-meteo.com' && source.pathname.includes('/v1/forecast')) route = 'weather';
@@ -137,7 +137,7 @@ export function initEnhancements({ state }) {
     else if (source.hostname === 'warnung.bund.de' && source.pathname.includes('/mowas/')) route = 'mowas';
     else if (source.hostname === 'warnung.bund.de' && source.pathname.includes('/dwd/')) route = 'dwd';
     else if (source.hostname === 'www.smard.de' && source.pathname.endsWith('/index_hour.json')) route = 'smardIndex';
-    else if (source.hostname === 'www.smard.de' && source.pathname.includes('_hour_')) { route = 'smardSeries'; const match = source.pathname.match(/_hour_(\\d+)\\.json$/); if (match) source.searchParams.set('timestamp', match[1]); }
+    else if (source.hostname === 'www.smard.de' && source.pathname.includes('_hour_')) { route = 'smardSeries'; const stamp = source.pathname.split('_hour_').pop().replace('.json', ''); if (stamp.length >= 10 && Number.isFinite(Number(stamp))) source.searchParams.set('timestamp', stamp); }
     if (!route) return null;
     return base + '/' + route + (source.searchParams.size ? '?' + source.searchParams.toString() : '');
   }
@@ -232,8 +232,8 @@ export function initEnhancements({ state }) {
     let current = ''; try { current = localStorage.getItem('emonito:edge-api-base') || ''; } catch {}
     const next = window.prompt('URL развёрнутого Cloudflare Worker (HTTPS). Пустое поле отключает прокси.', current);
     if (next === null) return;
-    const cleaned = next.trim().replace(/\\/$/, '');
-    if (cleaned && !/^https:\\/\\//i.test(cleaned)) { window.alert('Нужен HTTPS URL.'); return; }
+    let cleaned = next.trim(); if (cleaned.endsWith('/')) cleaned = cleaned.slice(0, -1);
+    if (cleaned && !cleaned.toLowerCase().startsWith('https://')) { window.alert('Нужен HTTPS URL.'); return; }
     try { if (cleaned) localStorage.setItem('emonito:edge-api-base', cleaned); else localStorage.removeItem('emonito:edge-api-base'); } catch {}
     $('emoApi').textContent = cleaned ? 'Edge API: ON' : 'Edge API';
     $('emoPointStatus').textContent = cleaned ? 'Прокси настроен. Запросы поддерживаемых источников идут через Worker.' : 'Прокси отключён; используются прямые публичные источники.';
