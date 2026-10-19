@@ -457,6 +457,7 @@ import { setupMobileCollapsibles } from './ui.js';
       window.setTimeout(start,700);
     }
   }
-\n  function start(){setupControls();setupMobileNavigation();initOnboarding();initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES});document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
+
+  function start(){setupControls();setupMobileNavigation();initOnboarding();initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES});document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
