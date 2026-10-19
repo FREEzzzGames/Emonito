@@ -147,7 +147,24 @@
   function setupControls(){
     $('refreshAll')?.addEventListener('click',refreshAll);
     $('weatherLocate')?.addEventListener('click',locateUser);
-    document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b===btn));const category=btn.dataset.category;const groups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};const allowed=groups[category];document.querySelectorAll('[data-module]').forEach(el=>{el.hidden=category!=='all'&&!(allowed?.has(el.dataset.module)||el.dataset.module===category);});}));
+    const categoryGroups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};
+    function applyCategory(category){
+      const allowed=categoryGroups[category];
+      document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category===category));
+      document.querySelectorAll('[data-module]').forEach(el=>{
+        if(el.classList.contains('map-panel')){el.hidden=false;return;}
+        if(el.classList.contains('mobile-map-summary')){el.hidden=false;return;}
+        el.hidden=category!=='all'&&!(allowed?.has(el.dataset.module)||el.dataset.module===category);
+      });
+      const mobileNav=document.getElementById('mobileNav');
+      mobileNav?.querySelectorAll('[data-nav-section]').forEach(b=>{
+        const active=b.dataset.navSection===category;
+        b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
+      });
+      state.selectedCategory=category;
+      if(state.map)setTimeout(()=>state.map.invalidateSize({pan:false}),80);
+    }
+    document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>applyCategory(btn.dataset.category)));
     $('imageryMode')?.addEventListener('change',e=>{if(!state.map)return;state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);});
     $('mapRefreshTransport')?.addEventListener('click',()=>{loadTransport();loadAircraft();});
   }
@@ -236,12 +253,13 @@
     document.body.appendChild(nav);
     const groups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};
     function openSection(key){
-      const allowed=groups[key];
-      grid.querySelectorAll('[data-module]').forEach(el=>{
-        el.hidden=key!=='all'&&!(allowed?.has(el.dataset.module)||el.dataset.module===key);
-      });
+      const categoryButton=toolbar?.querySelector('[data-category="'+key+'"]');
+      if(categoryButton){categoryButton.click();return;}
+      // Keep map visible and synchronize both navigation rows for the "All" view.
+      document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category==='all'));
+      grid.querySelectorAll('[data-module]').forEach(el=>{el.hidden=false;});
       nav.querySelectorAll('button').forEach(b=>{const active=b.dataset.navSection===key;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
-      if(toolbar)toolbar.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category===key));
+      state.selectedCategory=key;
       if(state.map)setTimeout(()=>state.map.invalidateSize({pan:false}),100);
     }
     nav.addEventListener('click',e=>{const b=e.target.closest('[data-nav-section]');if(b)openSection(b.dataset.navSection);});
