@@ -348,3 +348,22 @@ body.dashboard-mode .side { grid-template-columns: repeat(3, minmax(0,1fr)); }
 #planetExplorer{margin-top:0}
 .solar-terminator-line{filter:drop-shadow(0 0 5px rgba(88,217,255,.95))}
 @media(max-width:760px){.intro{padding:10px 0 12px}.intro h2{font-size:20px}.intro p{display:none}.planet-explorer-toggle{margin-bottom:10px;padding:8px 9px}.planet-explorer-toggle button{max-width:48%;white-space:normal}.map{height:43vh;min-height:250px;max-height:440px}.grid{gap:9px}.side{gap:7px}.metric{min-height:100px;padding:9px}.metric .value{font-size:23px}.metric .detail{font-size:9px}.panel .head{gap:7px}.planet-explorer{gap:9px}}
+
+
+/* Local Zenith and procedural ambient controls */
+.local-radar-panel,.ambient-panel{grid-column:1/-1}
+.local-radar-toolbar,.ambient-controls,.ambient-presets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}
+.local-radar-toolbar button,.ambient-controls button,.ambient-presets button{min-height:36px;padding:8px 11px}
+.local-radar-location{font-size:12px;color:var(--muted);margin:8px 0}
+.local-radar-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.local-radar-grid article{min-width:0;border:1px solid var(--line);border-radius:9px;padding:12px;background:#0b1012;display:flex;flex-direction:column;gap:7px}
+.local-radar-label{font-size:9px;letter-spacing:.07em;color:var(--muted)}
+.local-radar-grid strong{font-size:clamp(16px,2.5vw,23px);line-height:1.15;overflow-wrap:anywhere;color:var(--cyan)}
+.local-radar-grid small,.local-radar-note{font-size:10px;line-height:1.5;color:var(--muted)}
+.ambient-controls label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.ambient-controls input[type=range]{width:110px;accent-color:var(--cyan)}
+.ambient-check input{accent-color:var(--cyan)}
+.ambient-presets button{border:1px solid var(--line);background:#0b1012;color:var(--muted)}
+.ambient-presets button.active{border-color:var(--cyan);color:var(--cyan);background:#102126}
+@media(max-width:760px){.local-radar-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.local-radar-grid article{padding:10px}.local-radar-toolbar button{flex:1}.ambient-controls{align-items:flex-start}.ambient-controls label:first-of-type{width:100%;justify-content:space-between}.ambient-controls input[type=range]{width:min(58vw,220px)}}
+@media(prefers-reduced-motion:reduce){.ambient-presets button{transition:none}}
