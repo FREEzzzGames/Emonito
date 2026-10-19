@@ -1,0 +1,144 @@
+/* EMONITO — open-data monitoring dashboard. No secrets are embedded. */
+'use strict';
+(() => {
+  const $ = id => document.getElementById(id);
+  const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'all' };
+  const SOURCES = {
+    usgs:'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
+    eonet:'https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=100',
+    iss:'https://api.wheretheiss.at/v1/satellites/25544',
+    weather:'https://api.open-meteo.com/v1/forecast',
+    air:'https://air-quality-api.open-meteo.com/v1/air-quality',
+    swpc:'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
+    solar:'https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json',
+    neo:'https://api.nasa.gov/neo/rest/v1/feed?api_key=DEMO_KEY',
+    openSky:'https://opensky-network.org/api/states/all',
+    energy:'https://ourworldindata.org/grapher/electricity-prod-source-stacked.csv'
+  };
+  const $status = (id, text, mode='') => { const el=$(id); if(!el)return; el.textContent=text; el.className='status '+mode; };
+  const text = (id, value) => { if($(id)) $(id).textContent = value == null ? '—' : String(value); };
+  const fmt = (n,d=1) => Number.isFinite(Number(n)) ? Number(n).toFixed(d) : '—';
+  const dateTime = value => value ? new Date(value).toLocaleString() : 'Time unavailable';
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  async function fetchJson(url, timeout=14000) {
+    const previous=state.requests.get(url); if(previous) previous.abort();
+    const controller=new AbortController(); state.requests.set(url,controller);
+    const timer=setTimeout(()=>controller.abort(),timeout);
+    try { const response=await fetch(url,{signal:controller.signal,headers:{Accept:'application/json'}}); if(!response.ok) throw new Error('HTTP '+response.status); return await response.json(); }
+    finally { clearTimeout(timer); if(state.requests.get(url)===controller)state.requests.delete(url); }
+  }
+  function setList(id, items, empty='No data available') {
+    const el=$(id); if(!el)return; el.replaceChildren();
+    if(!items.length){const li=document.createElement('li');li.className='empty';li.textContent=empty;el.append(li);return;}
+    items.forEach(item=>el.append(item));
+  }
+  function makeRow(title, detail, value='', href='') {
+    const li=document.createElement('li');li.className='data-row';
+    const left=document.createElement('div');left.className='row-main';
+    const heading=document.createElement(href?'a':'div');heading.className='row-title';heading.textContent=title;
+    if(href){heading.href=href;heading.target='_blank';heading.rel='noopener noreferrer';}
+    const sub=document.createElement('div');sub.className='row-detail';sub.textContent=detail;
+    left.append(heading,sub);li.append(left);
+    if(value){const right=document.createElement('div');right.className='row-value';right.textContent=value;li.append(right);}
+    return li;
+  }
+  function initMap(){
+    if(!window.L){$status('mapStatus','MAP LIBRARY FAILED','error');return;}
+    const map=L.map('map',{worldCopyJump:true,preferCanvas:true,zoomControl:false,minZoom:2}).setView([20,0],2);
+    L.control.zoom({position:'bottomright'}).addTo(map);
+    const base=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+    const satellite=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_CorrectedReflectance_TrueColor',format:'image/jpeg',transparent:false,version:'1.1.1',time:new Date(Date.now()-86400000).toISOString().slice(0,10),attribution:'NASA GIBS / EOSDIS',tileSize:256});
+    const clouds=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_Cloud_Top_Temp_Day',format:'image/png',transparent:true,version:'1.1.1',attribution:'NASA GIBS'});
+    state.map=map;state.layers={base,satellite,clouds,quakes:L.layerGroup().addTo(map),events:L.layerGroup().addTo(map),iss:L.layerGroup().addTo(map),air:L.layerGroup(),transport:L.layerGroup(),energy:L.layerGroup()};
+    L.control.layers({'Street map':base,'NASA satellite imagery':satellite},{'Cloud-top temperature':clouds,'Earthquakes':state.layers.quakes,'Natural events':state.layers.events,'ISS':state.layers.iss,'Transport data':state.layers.transport,'Energy infrastructure':state.layers.energy},{collapsed:true,position:'topright'}).addTo(map);
+    map.on('click',e=>{state.location={latitude:e.latlng.lat,longitude:e.latlng.lng};text('selectedCoords',fmt(e.latlng.lat,3)+'°, '+fmt(e.latlng.lng,3)+'°');loadWeather();loadAir();loadHistory();});
+    $('mapLocate').addEventListener('click',()=>locateUser());
+    $('mapReset').addEventListener('click',()=>map.setView([20,0],2));
+    $status('mapStatus','MAP READY','ok');
+  }
+  function popupLink(title,detail,href){return '<strong>'+esc(title)+'</strong><br>'+esc(detail)+(href?'<br><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'');}
+  async function loadQuakes(){
+    $status('quakeStatus','LOADING');
+    try{const d=await fetchJson(SOURCES.usgs);const features=d.features||[];text('quakeCount',features.length);
+      const sorted=[...features].sort((a,b)=>(b.properties?.mag||0)-(a.properties?.mag||0));
+      setList('quakeList',sorted.slice(0,8).map(f=>{const p=f.properties||{},c=f.geometry?.coordinates||[];return makeRow(p.place||'Unknown location','Depth '+fmt(c[2],1)+' km · '+dateTime(p.time),'M '+fmt(p.mag,1),p.url)}),'No earthquakes reported in this period.');
+      const group=state.layers.quakes;if(group){group.clearLayers();features.forEach(f=>{const p=f.properties||{},c=f.geometry?.coordinates||[];if(!state.map||c.length<2)return;const m=L.circleMarker([c[1],c[0]],{radius:Math.max(4,Math.min(13,3+(Number(p.mag)||0)*1.4)),color:(p.mag||0)>=5?'#ff5f5f':'#e6d34b',weight:1,fillOpacity:.55});m.bindPopup(popupLink('Magnitude '+fmt(p.mag,1),p.place+' · depth '+fmt(c[2],1)+' km',p.url));m.addTo(group);});}
+      text('quakePeak','M '+fmt(sorted[0]?.properties?.mag,1));$status('quakeStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');
+    }catch(e){$status('quakeStatus','UNAVAILABLE','error');setList('quakeList',[],'USGS unavailable: '+e.message);text('quakeCount','—');}
+  }
+  async function loadEvents(){
+    $status('eventStatus','LOADING');
+    try{const d=await fetchJson(SOURCES.eonet);const events=d.events||[];text('eventCount',events.length);
+      setList('eventList',events.slice(0,8).map(e=>{const g=e.geometry?.[e.geometry.length-1];const coords=g?.coordinates;const loc=Array.isArray(coords)?coords.slice(0,2).map(v=>fmt(v,2)).join(', '):'Location not supplied';return makeRow(e.title||'Natural event',(e.categories||[]).map(c=>c.title).join(', ')+' · '+loc,g?.date?dateTime(g.date):'Date unavailable',e.sources?.[0]?.url||e.link)}),'No open events returned by NASA EONET.');
+      const group=state.layers.events;if(group){group.clearLayers();events.forEach(e=>{const g=e.geometry?.[e.geometry.length-1],c=g?.coordinates;if(!Array.isArray(c)||c.length<2||!Number.isFinite(c[0])||!Number.isFinite(c[1]))return;const marker=L.circleMarker([c[1],c[0]],{radius:6,color:'#ff9b47',fillColor:'#ff9b47',fillOpacity:.75,weight:1});marker.bindPopup(popupLink(e.title,(e.categories||[]).map(x=>x.title).join(', ')+' · '+(g.date||''),e.sources?.[0]?.url||e.link));marker.addTo(group);});}
+      $status('eventStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');
+    }catch(e){text('eventCount','—');$status('eventStatus','UNAVAILABLE','error');setList('eventList',[],'NASA EONET unavailable: '+e.message);}
+  }
+  async function loadISS(){
+    $status('issStatus','LOADING');
+    try{const d=await fetchJson(SOURCES.iss);if(!Number.isFinite(Number(d.latitude))||!Number.isFinite(Number(d.longitude)))throw new Error('Invalid coordinates');
+      text('issLat',fmt(d.latitude,2)+'°');text('issLon',fmt(d.longitude,2)+'°');text('issAlt',fmt(d.altitude,1)+' km');text('issSpeed',fmt(d.velocity,0)+' km/h');
+      setList('issList',[makeRow('ISS / NORAD 25544','Lat '+fmt(d.latitude,4)+'° · Lon '+fmt(d.longitude,4)+'°','ALT '+fmt(d.altitude,1)+' km','https://wheretheiss.at/'),makeRow('Orbital velocity','Reported by WhereTheISS.at',fmt(d.velocity,0)+' km/h'),makeRow('Measurement timestamp',dateTime(Number(d.timestamp)*1000),'UTC')]);
+      const group=state.layers.iss;if(group&&state.map){group.clearLayers();const icon=L.divIcon({className:'iss-icon',html:'ISS',iconSize:[34,20],iconAnchor:[17,10]});L.marker([d.latitude,d.longitude],{icon}).bindPopup(popupLink('International Space Station','Altitude '+fmt(d.altitude,1)+' km · velocity '+fmt(d.velocity,0)+' km/h','https://wheretheiss.at/')).addTo(group);}
+      $status('issStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');
+    }catch(e){['issLat','issLon','issAlt','issSpeed'].forEach(id=>text(id,'—'));$status('issStatus','UNAVAILABLE','error');setList('issList',[],'ISS provider unavailable: '+e.message);}
+  }
+  async function loadWeather(){
+    const loc=state.location||{latitude:48.89,longitude:8.70};$status('weatherStatus','LOADING');
+    const url=SOURCES.weather+'?latitude='+loc.latitude+'&longitude='+loc.longitude+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=temperature_2m,precipitation,wind_speed_10m&past_days=7&forecast_days=3&timezone=auto';
+    try{const d=await fetchJson(url);const c=d.current;if(!c)throw new Error('No current conditions');text('weatherTemp',fmt(c.temperature_2m,1)+'°C');text('weatherFeels',fmt(c.apparent_temperature,1)+'°C feels like');text('weatherWind',fmt(c.wind_speed_10m,1)+' km/h');text('weatherPressure',fmt(c.surface_pressure,0)+' hPa');text('weatherHumidity',fmt(c.relative_humidity_2m,0)+'%');text('weatherRain',fmt(c.precipitation,1)+' mm');text('weatherUpdated',dateTime(c.time));text('selectedCoords',fmt(loc.latitude,3)+'°, '+fmt(loc.longitude,3)+'°');drawHistory(d.hourly);$status('weatherStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');}
+    catch(e){$status('weatherStatus','UNAVAILABLE','error');['weatherTemp','weatherFeels','weatherWind','weatherPressure','weatherHumidity','weatherRain'].forEach(id=>text(id,'—'));text('weatherUpdated','Source unavailable: '+e.message);}
+  }
+  async function loadAir(){
+    const loc=state.location||{latitude:48.89,longitude:8.70};$status('airStatus','LOADING');
+    try{const d=await fetchJson(SOURCES.air+'?latitude='+loc.latitude+'&longitude='+loc.longitude+'&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,european_aqi&timezone=auto');const c=d.current||{};text('airAQI',c.european_aqi??'—');text('airPM25',fmt(c.pm2_5,1)+' µg/m³');text('airPM10',fmt(c.pm10,1)+' µg/m³');text('airNO2',fmt(c.nitrogen_dioxide,1)+' µg/m³');text('airUpdated',dateTime(c.time));$status('airStatus','MODELLED / LIVE','ok');}
+    catch(e){$status('airStatus','UNAVAILABLE','error');['airAQI','airPM25','airPM10','airNO2'].forEach(id=>text(id,'—'));text('airUpdated','Air-quality API unavailable: '+e.message);}
+  }
+  async function loadSpaceWeather(){
+    $status('spaceStatus','LOADING');
+    try{const d=await fetchJson(SOURCES.swpc);const rows=Array.isArray(d)?d:[];const values=rows.slice(1).map(r=>({time:r[0],kp:Number(r[1])})).filter(r=>Number.isFinite(r.kp));const last=values[values.length-1];text('kpValue',last?fmt(last.kp,1):'—');text('kpTime',last?last.time:'No recent index');setList('solarList',values.slice(-8).reverse().map(v=>makeRow('Planetary K-index',v.time,'Kp '+fmt(v.kp,1))),'NOAA returned no K-index data.');$status('spaceStatus','LIVE · NOAA SWPC','ok');}
+    catch(e){$status('spaceStatus','UNAVAILABLE','error');text('kpValue','—');setList('solarList',[],'NOAA SWPC unavailable: '+e.message);}
+    try{const d=await fetchJson(SOURCES.solar);const rows=Array.isArray(d)?d:[];const last=rows[rows.length-1];if(last){text('solarNumber',last['ssn']??last['sunspot number']??last['sunspot_number']??'—');text('solarDate',last['time-tag']||last.time_tag||last['Year']||'Solar cycle observation');}}catch(e){text('solarNumber','—');text('solarDate','Solar cycle feed unavailable');}
+  }
+  async function loadNEO(){
+    $status('neoStatus','LOADING');
+    const start=new Date().toISOString().slice(0,10),end=new Date(Date.now()+86400000).toISOString().slice(0,10);
+    try{const d=await fetchJson('https://api.nasa.gov/neo/rest/v1/feed?start_date='+start+'&end_date='+end+'&api_key=DEMO_KEY');const list=Object.values(d.near_earth_objects||{}).flat();text('neoCount',list.length);const sorted=list.sort((a,b)=>(a.close_approach_data?.[0]?.miss_distance?.kilometers||Infinity)-(b.close_approach_data?.[0]?.miss_distance?.kilometers||Infinity));setList('neoList',sorted.slice(0,6).map(n=>{const a=n.close_approach_data?.[0]||{};return makeRow(n.name,'Closest approach '+(a.close_approach_date_full||a.close_approach_date||'unknown')+' · '+(n.is_potentially_hazardous_asteroid?'potentially hazardous':'no NASA hazard flag'),a.miss_distance?.kilometers?fmt(Number(a.miss_distance.kilometers)/1000000,3)+' million km':'—',n.nasa_jpl_url)}),'No NEO records returned.');$status('neoStatus','LIVE · NASA DEMO KEY','ok');}
+    catch(e){text('neoCount','—');$status('neoStatus','LIMITED / UNAVAILABLE','error');setList('neoList',[],'NASA NEO API unavailable or DEMO_KEY rate-limited. No substitute values shown.');}
+  }
+  async function loadTransport(){
+    $status('transportStatus','LOADING');
+    try{const bounds=state.map?state.map.getBounds():L.latLngBounds([35,-10],[60,30]);const s=bounds.getSouth(),w=bounds.getWest(),n=bounds.getNorth(),e=bounds.getEast();const query='[out:json][timeout:12];(node["aeroway"="aerodrome"]('+s+','+w+','+n+','+e+');way["aeroway"="aerodrome"]('+s+','+w+','+n+','+e+');node["railway"="station"]('+s+','+w+','+n+','+e+'););out center tags 80;';
+      const d=await fetchJson('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query),18000);const els=d.elements||[];const group=state.layers.transport;if(group){group.clearLayers();els.forEach(o=>{const lat=o.lat??o.center?.lat,lon=o.lon??o.center?.lon;if(!Number.isFinite(lat)||!Number.isFinite(lon))return;const name=o.tags?.name||o.tags?.['name:en']||o.tags?.aeroway||'Transport feature';L.circleMarker([lat,lon],{radius:4,color:'#60d9ff',fillColor:'#60d9ff',fillOpacity:.7,weight:1}).bindPopup(popupLink(name,o.tags?.railway||o.tags?.aeroway||'OpenStreetMap feature','https://www.openstreetmap.org/'+o.type+'/'+o.id)).addTo(group);});}
+      text('transportCount',els.length);setList('transportList',els.slice(0,8).map(o=>makeRow(o.tags?.name||o.tags?.['name:en']||'Unnamed transport feature',o.tags?.railway||o.tags?.aeroway||o.type,'OSM', 'https://www.openstreetmap.org/'+o.type+'/'+o.id)),'No transport features in the current map view.');$status('transportStatus','LIVE · OPENSTREETMAP','ok');
+    }catch(e){text('transportCount','—');$status('transportStatus','UNAVAILABLE / RATE LIMITED','error');setList('transportList',[],'Overpass unavailable or rate-limited. Base map remains available.');}
+  }
+  async function loadEnergy(){
+    $status('energyStatus','LOADING');
+    try{const d=await fetch('https://ourworldindata.org/grapher/electricity-prod-source-stacked.csv?tab=chart&time=latest&csvType=full&useColumnShortNames=true');if(!d.ok)throw new Error('HTTP '+d.status);const csv=await d.text();const lines=csv.trim().split(/\r?\n/);const header=lines[0].split(',');const countryIndex=header.indexOf('Entity');const yearIndex=header.indexOf('Year');const rows=lines.slice(1).filter(line=>line.split(',')[countryIndex]==='Germany').slice(-5);setList('energyList',rows.map(line=>{const cells=line.split(',');return makeRow('Germany electricity production', 'Year '+(cells[yearIndex]||'—')+' · Our World in Data',cells.slice(2).filter(v=>v&&v!=='').slice(0,3).join(' / '))}),'Historical electricity dataset returned no rows.');text('energyCount','Historical');$status('energyStatus','HISTORICAL · OWID','ok');}
+    catch(e){text('energyCount','—');$status('energyStatus','UNAVAILABLE','error');setList('energyList',[],'Energy dataset unavailable. ENTSO-E near-real-time data needs a registered API token.');}
+  }
+  async function loadHistory(){
+    const loc=state.location||{latitude:48.89,longitude:8.70};$status('historyStatus','LOADING');
+    try{const url='https://archive-api.open-meteo.com/v1/archive?latitude='+loc.latitude+'&longitude='+loc.longitude+'&start_date='+new Date(Date.now()-29*86400000).toISOString().slice(0,10)+'&end_date='+new Date(Date.now()-86400000).toISOString().slice(0,10)+'&daily=temperature_2m_mean,precipitation_sum,wind_speed_10m_max&timezone=auto';const d=await fetchJson(url,18000);const days=d.daily?.time||[];if(!days.length)throw new Error('No history returned');drawHistoricalChart(days,d.daily.temperature_2m_mean||[],d.daily.precipitation_sum||[]);text('historySummary',days.length+' daily observations · '+days[0]+' to '+days[days.length-1]);$status('historyStatus','ARCHIVE API · '+days.length+' DAYS','ok');}
+    catch(e){$status('historyStatus','UNAVAILABLE','error');text('historySummary','Historical API unavailable: '+e.message);}
+  }
+  function drawHistory(hourly){
+    if(!hourly||!window.Chart)return;const ctx=$('forecastChart');if(!ctx)return;
+    if(state.chart)state.chart.destroy();state.chart=new Chart(ctx,{type:'line',data:{labels:(hourly.time||[]).slice(0,72).map(t=>t.slice(5,16)),datasets:[{label:'Temperature °C',data:(hourly.temperature_2m||[]).slice(0,72),borderColor:'#d9ff45',backgroundColor:'rgba(217,255,69,.08)',pointRadius:0,borderWidth:2,tension:.25},{label:'Wind km/h',data:(hourly.wind_speed_10m||[]).slice(0,72),borderColor:'#60d9ff',pointRadius:0,borderWidth:1,tension:.25}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#b8c0c4',boxWidth:10,font:{family:'monospace',size:10}}}},scales:{x:{ticks:{color:'#858d92',maxTicksLimit:7},grid:{color:'#22272a'}},y:{ticks:{color:'#858d92'},grid:{color:'#22272a'}}}}});
+  }
+  function drawHistoricalChart(labels,temps,rain){
+    if(!window.Chart)return;const ctx=$('historyChart');if(!ctx)return;if(state.historyChart)state.historyChart.destroy();state.historyChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Daily mean temperature °C',data:temps,borderColor:'#d9ff45',pointRadius:1,tension:.2,yAxisID:'y'},{label:'Precipitation mm',data:rain,borderColor:'#60d9ff',pointRadius:1,tension:.2,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#b8c0c4',boxWidth:10,font:{family:'monospace',size:10}}}},scales:{x:{ticks:{color:'#858d92',maxTicksLimit:8},grid:{color:'#22272a'}},y:{position:'left',ticks:{color:'#d9ff45'},grid:{color:'#22272a'}},y1:{position:'right',ticks:{color:'#60d9ff'},grid:{drawOnChartArea:false}}}}});}
+  function locateUser(){if(!navigator.geolocation){text('weatherUpdated','Geolocation not supported');return;}text('weatherUpdated','Requesting location permission…');navigator.geolocation.getCurrentPosition(p=>{state.location={latitude:p.coords.latitude,longitude:p.coords.longitude};state.map?.setView([p.coords.latitude,p.coords.longitude],7);loadWeather();loadAir();loadHistory();},e=>text('weatherUpdated',e.code===1?'Location permission denied':'Could not determine location'),{enableHighAccuracy:false,timeout:10000,maximumAge:300000});}
+  function setClock(){text('clock','UTC '+new Date().toISOString().slice(11,19));}
+  function setupControls(){
+    $('refreshAll')?.addEventListener('click',refreshAll);
+    $('weatherLocate')?.addEventListener('click',locateUser);
+    document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b===btn));const category=btn.dataset.category;document.querySelectorAll('[data-module]').forEach(el=>{el.hidden=category!=='all'&&el.dataset.module!==category;});}));
+    $('imageryMode')?.addEventListener('change',e=>{if(!state.map)return;state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);});
+    $('mapRefreshTransport')?.addEventListener('click',loadTransport);
+  }
+  async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadSpaceWeather(),loadNEO(),loadTransport(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
+  function start(){setupControls();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
