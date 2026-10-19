@@ -1,5 +1,5 @@
 /* Satellite Pass & Footprint visualizer. Orbit states are propagated from public TLE/GP elements. */
-export function initSatelliteIntercept({ state, $status }) {
+export function initSatelliteIntercept({ state }) {
   const $ = (id) => document.getElementById(id);
   const map = state.map;
   if (!map || !window.L) return;
