@@ -390,3 +390,21 @@ body.dashboard-mode .side { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .satellite-pass-select{border:0;background:none;padding:0;min-height:0;color:var(--cyan);font:inherit;text-align:left;cursor:pointer}
 .satellite-pass-select:hover{text-decoration:underline}
 @media(max-width:760px){.satellite-intercept-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 10px 10px}.satellite-intercept-controls,.satellite-target-row{padding-right:10px;padding-left:10px}.satellite-intercept-controls select{flex:1 1 100%;width:100%}.satellite-intercept-controls button{flex:1 1 auto}.satellite-target-row>label{min-height:34px}.satellite-target-row select{flex-basis:100%;width:100%}.satellite-pass-head{padding-right:10px;padding-left:10px}.satellite-pass-list{padding-right:10px;padding-left:10px}}
+
+
+/* Category screens: map is a persistent full-width workspace above the selected domain. */
+.map-panel{grid-column:1/-1;width:100%;order:-1}
+body.dashboard-mode .map-panel{display:block}
+.category-intro{padding:14px 0 12px;align-items:center}
+.category-intro h2{font-size:clamp(20px,2.4vw,28px)}
+.category-intro p{max-width:680px}
+.category-intro .toolbar{align-self:center}
+.grid{grid-template-columns:minmax(0,1fr);align-items:start}
+.grid>.side{grid-template-columns:repeat(6,minmax(0,1fr));grid-column:1/-1}
+.grid>[data-module][hidden],.shell>[data-module][hidden]{display:none!important}
+.grid>.panel[data-module],.shell>.panel[data-module]{min-width:0}
+.category-screen-item{animation:category-screen-in .16s ease-out}
+@keyframes category-screen-in{from{opacity:.65;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:980px){.grid>.side{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.map-panel{grid-column:1/-1}.map-panel>.head{display:flex;flex-wrap:wrap}.category-intro{padding:9px 0 10px;gap:8px}.category-intro>div:first-child{display:none}.category-intro .toolbar{width:100%}.grid{gap:8px}.grid>.side{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.category-screen-item{animation:none}}
+@media(prefers-reduced-motion:reduce){.category-screen-item{animation:none}}
