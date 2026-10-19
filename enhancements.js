@@ -23,6 +23,7 @@ export function initEnhancements({ state }) {
     <button type="button" id="emoSavePreset">Сохранить набор</button>
     <button type="button" id="emoAmbient" aria-pressed="false">◉ Ambient</button>
     <button type="button" id="emoWake" aria-pressed="false">Экран: авто</button>
+    <button type="button" id="emoApi" title="Настроить URL развёрнутого Edge Worker">Edge API</button>
     <span class="emo-freshness" id="emoFreshness" role="status">Проверка свежести…</span>`;
   tools.append(controls);
 
@@ -124,10 +125,28 @@ export function initEnhancements({ state }) {
       root.append(button);
     });
   }
+  function workerUrlFor(raw) {
+    let base = ''; try { base = (localStorage.getItem('emonito:edge-api-base') || '').trim().replace(/\\/$/, ''); } catch {}
+    if (!base) return null;
+    const source = new URL(raw); let route = null;
+    if (source.hostname === 'api.open-meteo.com' && source.pathname.includes('/v1/forecast')) route = 'weather';
+    else if (source.hostname === 'air-quality-api.open-meteo.com') route = 'air';
+    else if (source.hostname === 'api.open-meteo.com' && source.pathname.includes('/v1/elevation')) route = 'elevation';
+    else if (source.hostname === 'services.swpc.noaa.gov' && source.pathname.includes('xrays-6-hour')) route = 'xray';
+    else if (source.hostname === 'services.swpc.noaa.gov' && source.pathname.includes('/products/alerts.json')) route = 'alerts';
+    else if (source.hostname === 'warnung.bund.de' && source.pathname.includes('/mowas/')) route = 'mowas';
+    else if (source.hostname === 'warnung.bund.de' && source.pathname.includes('/dwd/')) route = 'dwd';
+    else if (source.hostname === 'www.smard.de' && source.pathname.endsWith('/index_hour.json')) route = 'smardIndex';
+    else if (source.hostname === 'www.smard.de' && source.pathname.includes('_hour_')) { route = 'smardSeries'; const match = source.pathname.match(/_hour_(\\d+)\\.json$/); if (match) source.searchParams.set('timestamp', match[1]); }
+    if (!route) return null;
+    return base + '/' + route + (source.searchParams.size ? '?' + source.searchParams.toString() : '');
+  }
   async function json(url, signal) {
-    const response = await fetch(url, { signal, headers: { Accept: 'application/json' }, cache: 'no-store' });
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    return response.json();
+    const proxy = workerUrlFor(url);
+    const response = await fetch(proxy || url, { signal, headers: { Accept: 'application/json' }, cache: 'no-store' });
+    if (!response.ok) throw new Error((proxy ? 'Edge API ' : 'HTTP ') + response.status);
+    const payload = await response.json();
+    return proxy && payload && Object.hasOwn(payload, 'data') ? Object.assign(payload.data, { __emonitoMeta: { fetchedAt: payload.fetchedAt, stale: payload.stale } }) : payload;
   }
   async function inspect(point) {
     if (!point || !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude)) return;
@@ -209,6 +228,17 @@ export function initEnhancements({ state }) {
   $('emoSavePreset').addEventListener('click', savePreset);
   $('emoAmbient').addEventListener('click', () => toggleAmbient(!ambient));
   $('emoWake').addEventListener('click', () => toggleWake(!wakeLock));
+  $('emoApi').addEventListener('click', () => {
+    let current = ''; try { current = localStorage.getItem('emonito:edge-api-base') || ''; } catch {}
+    const next = window.prompt('URL развёрнутого Cloudflare Worker (HTTPS). Пустое поле отключает прокси.', current);
+    if (next === null) return;
+    const cleaned = next.trim().replace(/\\/$/, '');
+    if (cleaned && !/^https:\\/\\//i.test(cleaned)) { window.alert('Нужен HTTPS URL.'); return; }
+    try { if (cleaned) localStorage.setItem('emonito:edge-api-base', cleaned); else localStorage.removeItem('emonito:edge-api-base'); } catch {}
+    $('emoApi').textContent = cleaned ? 'Edge API: ON' : 'Edge API';
+    $('emoPointStatus').textContent = cleaned ? 'Прокси настроен. Запросы поддерживаемых источников идут через Worker.' : 'Прокси отключён; используются прямые публичные источники.';
+  });
+  try { if (localStorage.getItem('emonito:edge-api-base')) $('emoApi').textContent = 'Edge API: ON'; } catch {}
   $('mapLocate')?.addEventListener('click', () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(p => { const point = { latitude: p.coords.latitude, longitude: p.coords.longitude }; map.setView([point.latitude, point.longitude], 7); inspect(point); }, () => { $('emoPointStatus').textContent = 'Геолокация недоступна или запрещена.'; }, { timeout: 10000, maximumAge: 300000 });
