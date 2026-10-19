@@ -9,6 +9,15 @@ const SOURCES = {
   dwd: 'https://warnung.bund.de/api31/dwd/mapData.json'
 };
 const TTL = 600;
+const dynamicKeys = new Set(['weather', 'air', 'elevation', 'smardSeries']);
+function dynamicSource(key, url) {
+  const q = url.searchParams;
+  if (key === 'weather') return 'https://api.open-meteo.com/v1/forecast?' + new URLSearchParams({ latitude: q.get('latitude') || '', longitude: q.get('longitude') || '', current: q.get('current') || 'temperature_2m,relative_humidity_2m,uv_index,precipitation', hourly: q.get('hourly') || '', daily: q.get('daily') || '', forecast_days: q.get('forecast_days') || '1', timezone: q.get('timezone') || 'auto' });
+  if (key === 'air') return 'https://air-quality-api.open-meteo.com/v1/air-quality?' + new URLSearchParams({ latitude: q.get('latitude') || '', longitude: q.get('longitude') || '', current: q.get('current') || 'european_aqi,pm2_5,pm10', hourly: q.get('hourly') || '', forecast_days: q.get('forecast_days') || '1', timezone: q.get('timezone') || 'auto' });
+  if (key === 'elevation') return 'https://api.open-meteo.com/v1/elevation?' + new URLSearchParams({ latitude: q.get('latitude') || '', longitude: q.get('longitude') || '' });
+  if (key === 'smardSeries') { const stamp = q.get('timestamp') || ''; if (!/^\\d{10,16}$/.test(stamp)) throw new Error('invalid_timestamp'); return 'https://www.smard.de/app/chart_data/410/DE/410_DE_hour_' + stamp + '.json'; }
+  return null;
+}
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Cache-Control': 'public, max-age=30' };
 const json = (body, status=200, extra={}) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json; charset=utf-8', ...extra } });
 async function upstream(url) {
@@ -55,14 +64,21 @@ export default {
       return json({ results: await refreshAll(env) });
     }
     const key = url.pathname.replace(/^\/+/, '');
-    if (!Object.hasOwn(SOURCES, key)) return json({ error: 'not_found', available: ['xray','alerts','smardIndex','mowas','dwd'] }, 404);
-    const cacheKey = new Request(new URL('/__cache/' + key, url.origin));
+    if (!Object.hasOwn(SOURCES, key) && !dynamicKeys.has(key)) return json({ error: 'not_found', available: ['xray','alerts','smardIndex','mowas','dwd','weather','air','elevation','smardSeries'] }, 404);
+    let upstreamUrl = SOURCES[key];
+    let snapshotKey = key;
+    if (dynamicKeys.has(key)) {
+      try { upstreamUrl = dynamicSource(key, url); } catch (error) { return json({ error: 'invalid_request', message: error.message }, 400); }
+      if (!upstreamUrl || (['weather','air','elevation'].includes(key) && (!url.searchParams.has('latitude') || !url.searchParams.has('longitude')))) return json({ error: 'missing_coordinates' }, 400);
+      snapshotKey = key + ':' + (url.searchParams.get('latitude') || '') + ':' + (url.searchParams.get('longitude') || '') + ':' + (url.searchParams.get('timestamp') || '');
+    }
+    const cacheKey = new Request(new URL('/__cache/' + encodeURIComponent(snapshotKey), url.origin));
     const edgeCache = caches.default;
     const cached = await edgeCache.match(cacheKey);
     if (cached) return cached;
     try {
-      let snapshot = await readSnapshot(env, key);
-      if (!snapshot || Date.now() - snapshot.fetchedAt > TTL * 1000) snapshot = await fetchAndCache(env, key, SOURCES[key]);
+      let snapshot = await readSnapshot(env, snapshotKey);
+      if (!snapshot || Date.now() - snapshot.fetchedAt > TTL * 1000) snapshot = await fetchAndCache(env, snapshotKey, upstreamUrl);
       const response = json({ ...snapshot, stale: Boolean(snapshot.stale) }, 200, { 'Cache-Control': 'public, max-age=30, s-maxage=60' });
       if (!snapshot.stale) ctx.waitUntil(edgeCache.put(cacheKey, response.clone()));
       return response;
