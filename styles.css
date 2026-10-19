@@ -262,3 +262,77 @@ body.dashboard-mode .side { grid-template-columns: repeat(3, minmax(0,1fr)); }
 @media (prefers-reduced-motion: reduce) {
   .module-timeline button[aria-pressed="true"], .aurora-badge.storm { animation: none; }
 }
+
+
+/* Planet Explorer — discovery-first UI, compact and responsive. */
+.planet-explorer { display:grid; gap:14px; margin:0 0 18px; }
+.planet-section-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding:4px 0 2px; }
+.planet-section-head h2 { margin:5px 0; font-size:clamp(22px,3vw,30px); letter-spacing:-.035em; }
+.planet-section-head p,.planet-subhead p { margin:5px 0 0; color:var(--muted); font-size:12px; max-width:760px; }
+.planet-briefing,.planet-block { padding:15px; }
+.planet-subhead { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:0 0 12px; }
+.planet-subhead h3 { margin:3px 0 0; font-size:17px; line-height:1.3; }
+.planet-kicker { color:var(--cyan); font-size:10px; letter-spacing:.11em; font-weight:800; }
+.briefing-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.brief-card { display:flex; flex-direction:column; gap:7px; min-width:0; padding:13px; border:1px solid var(--line); border-radius:10px; background:linear-gradient(145deg,#172329,#101619); }
+.brief-kicker { color:var(--lime); font-size:9px; letter-spacing:.1em; }
+.brief-card h3 { margin:0; font-size:14px; }
+.brief-card p { margin:0; flex:1; color:#c0ccd1; font-size:11px; line-height:1.55; }
+.brief-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:4px; }
+.brief-actions button { min-height:35px; padding:6px 9px; font-size:10px; }
+.brief-actions .brief-track { border-color:#3e666e; color:var(--cyan); }
+.briefing-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:12px; margin-top:12px; border-top:1px solid var(--line-soft); color:var(--muted); font-size:10px; }
+.briefing-footer button { min-height:34px; padding:5px 9px; font-size:10px; }
+.planet-explorer-grid { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr); gap:14px; align-items:start; }
+.expedition-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.expedition-card { min-width:0; padding:11px; border:1px solid var(--line); border-radius:9px; background:#10171a; }
+.expedition-head { display:flex; align-items:flex-start; gap:9px; }
+.expedition-icon { display:grid; place-items:center; width:30px; height:30px; flex:0 0 30px; border:1px solid #3c6571; border-radius:7px; color:var(--cyan); }
+.expedition-title { min-width:0; }
+.expedition-title h3 { margin:0; font-size:12px; line-height:1.45; }
+.expedition-title span { display:block; margin-top:3px; color:var(--muted); font-size:10px; }
+.expedition-card > p { min-height:58px; margin:9px 0; color:var(--muted); font-size:10px; line-height:1.55; }
+.expedition-start { width:100%; min-height:36px; padding:6px; color:var(--cyan); font-size:10px; }
+.expedition-player { margin-top:12px; padding:13px; border:1px solid #3b6d7c; border-radius:9px; background:#0c171c; }
+.expedition-player-top,.expedition-player-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.expedition-player-top { color:var(--cyan); font-size:10px; letter-spacing:.08em; }
+.expedition-player-top button { min-height:32px; width:32px; padding:0; font-size:18px; }
+.expedition-player h4 { margin:10px 0 5px; font-size:15px; }
+.expedition-player p { color:#c5d1d6; font-size:12px; line-height:1.6; }
+.expedition-player-actions button { min-height:38px; font-size:11px; }
+.watch-options { display:grid; gap:7px; }
+.watch-option { display:flex; align-items:center; gap:10px; min-height:42px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; color:#d7e1e5; font-size:11px; cursor:pointer; }
+.watch-option input { width:17px; height:17px; flex:0 0 17px; accent-color:var(--cyan); }
+.watch-note { margin-top:12px; padding-top:10px; border-top:1px solid var(--line-soft); color:var(--muted); font-size:10px; line-height:1.5; }
+.timeline-panel .planet-subhead { align-items:center; }
+.planet-timeline { display:grid; gap:0; margin:0; padding:0; list-style:none; }
+.timeline-item { display:grid; grid-template-columns:13px minmax(0,1fr); gap:11px; padding:10px 0; border-top:1px solid var(--line-soft); }
+.timeline-dot { width:8px; height:8px; margin-top:5px; border:1px solid var(--cyan); border-radius:50%; background:#102e38; box-shadow:0 0 8px rgba(88,217,255,.18); }
+.timeline-item:has(.timeline-body p:first-of-type) .timeline-dot { border-color:var(--lime); }
+.timeline-body { min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; align-items:start; }
+.timeline-body strong { font-size:12px; }
+.timeline-body p { grid-column:1/-1; margin:0; color:var(--muted); font-size:11px; line-height:1.5; }
+.timeline-body time { grid-column:2; grid-row:1; color:#8ea2ab; font-size:9px; white-space:nowrap; }
+.planet-disclaimer { padding:11px 13px; border-left:2px solid #657d86; background:#10171a; color:var(--muted); font-size:10px; line-height:1.6; }
+.planet-disclaimer strong { color:var(--text); }
+.planet-explorer [hidden] { display:none !important; }
+@media(max-width:760px) {
+ .planet-section-head { align-items:flex-start; flex-direction:column; gap:8px; }
+ .planet-section-head > button { width:100%; }
+ .planet-briefing,.planet-block { padding:11px; }
+ .planet-subhead { gap:8px; }
+ .planet-subhead h3 { font-size:15px; }
+ .planet-subhead p { font-size:11px; }
+ .briefing-cards { grid-template-columns:1fr; }
+ .brief-card { padding:11px; }
+ .briefing-footer { align-items:flex-start; flex-direction:column; }
+ .briefing-footer button { width:100%; }
+ .planet-explorer-grid { grid-template-columns:1fr; }
+ .expedition-list { grid-template-columns:1fr; }
+ .expedition-card > p { min-height:0; }
+ .timeline-panel .planet-subhead { align-items:flex-start; flex-direction:column; }
+ .timeline-panel .planet-subhead > button { width:100%; }
+ .timeline-body { grid-template-columns:minmax(0,1fr); }
+ .timeline-body time { grid-column:1; grid-row:auto; }
+}
+@media(prefers-reduced-motion:reduce) { .planet-explorer * { scroll-behavior:auto !important; animation:none !important; transition:none !important; } }
