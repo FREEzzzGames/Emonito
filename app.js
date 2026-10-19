@@ -2,7 +2,7 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'all' };
+  const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'all', issHistory:[] };
   const SOURCES = {
     usgs:'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
     eonet:'https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=100',
@@ -49,8 +49,8 @@
     const base=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
     const satellite=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_CorrectedReflectance_TrueColor',format:'image/jpeg',transparent:false,version:'1.1.1',time:new Date(Date.now()-86400000).toISOString().slice(0,10),attribution:'NASA GIBS / EOSDIS',tileSize:256});
     const clouds=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_Cloud_Top_Temp_Day',format:'image/png',transparent:true,version:'1.1.1',attribution:'NASA GIBS'});
-    state.map=map;state.layers={base,satellite,clouds,quakes:L.layerGroup().addTo(map),events:L.layerGroup().addTo(map),iss:L.layerGroup().addTo(map),air:L.layerGroup(),transport:L.layerGroup(),aircraft:L.layerGroup(),energy:L.layerGroup()};
-    L.control.layers({'Street map':base,'NASA satellite imagery':satellite},{'Cloud-top temperature':clouds,'Earthquakes':state.layers.quakes,'Natural events':state.layers.events,'ISS':state.layers.iss,'Transport data':state.layers.transport,'Aircraft (OpenSky)':state.layers.aircraft,'Energy infrastructure':state.layers.energy},{collapsed:true,position:'topright'}).addTo(map);
+    state.map=map;state.layers={base,satellite,clouds,quakes:L.layerGroup().addTo(map),events:L.layerGroup().addTo(map),iss:L.layerGroup().addTo(map),issTrail:L.layerGroup().addTo(map),air:L.layerGroup(),transport:L.layerGroup(),aircraft:L.layerGroup(),energy:L.layerGroup()};
+    L.control.layers({'Street map':base,'NASA satellite imagery':satellite},{'Cloud-top temperature':clouds,'Earthquakes':state.layers.quakes,'Natural events':state.layers.events,'ISS position':state.layers.iss,'ISS sampled trail':state.layers.issTrail,'Transport data':state.layers.transport,'Aircraft (OpenSky)':state.layers.aircraft,'Energy infrastructure':state.layers.energy},{collapsed:true,position:'topright'}).addTo(map);
     map.on('click',e=>{state.location={latitude:e.latlng.lat,longitude:e.latlng.lng};text('selectedCoords',fmt(e.latlng.lat,3)+'°, '+fmt(e.latlng.lng,3)+'°');loadWeather();loadAir();loadMarine();loadHistory();});
     $('mapLocate').addEventListener('click',()=>locateUser());
     $('mapReset').addEventListener('click',()=>map.setView([20,0],2));
@@ -79,7 +79,7 @@
     try{const d=await fetchJson(SOURCES.iss);if(!Number.isFinite(Number(d.latitude))||!Number.isFinite(Number(d.longitude)))throw new Error('Invalid coordinates');
       text('issLat',fmt(d.latitude,2)+'°');text('issLon',fmt(d.longitude,2)+'°');text('issAlt',fmt(d.altitude,1)+' km');text('issSpeed',fmt(d.velocity,0)+' km/h');
       setList('issList',[makeRow('ISS / NORAD 25544','Lat '+fmt(d.latitude,4)+'° · Lon '+fmt(d.longitude,4)+'°','ALT '+fmt(d.altitude,1)+' km','https://wheretheiss.at/'),makeRow('Orbital velocity','Reported by WhereTheISS.at',fmt(d.velocity,0)+' km/h'),makeRow('Measurement timestamp',dateTime(Number(d.timestamp)*1000),'UTC')]);
-      const group=state.layers.iss;if(group&&state.map){group.clearLayers();const icon=L.divIcon({className:'iss-icon',html:'ISS',iconSize:[34,20],iconAnchor:[17,10]});L.marker([d.latitude,d.longitude],{icon}).bindPopup(popupLink('International Space Station','Altitude '+fmt(d.altitude,1)+' km · velocity '+fmt(d.velocity,0)+' km/h','https://wheretheiss.at/')).addTo(group);}
+      const group=state.layers.iss;if(group&&state.map){group.clearLayers();const icon=L.divIcon({className:'iss-icon',html:'ISS',iconSize:[34,20],iconAnchor:[17,10]});L.marker([d.latitude,d.longitude],{icon}).bindPopup(popupLink('International Space Station','Altitude '+fmt(d.altitude,1)+' km · velocity '+fmt(d.velocity,0)+' km/h','https://wheretheiss.at/')).addTo(group);state.issHistory.push([Number(d.latitude),Number(d.longitude)]);if(state.issHistory.length>180)state.issHistory.shift();const trail=state.layers.issTrail;if(trail){trail.clearLayers();if(state.issHistory.length>1)L.polyline(state.issHistory,{color:'#d9ff45',weight:2,opacity:.7}).addTo(trail);}}
       $status('issStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');
     }catch(e){['issLat','issLon','issAlt','issSpeed'].forEach(id=>text(id,'—'));$status('issStatus','UNAVAILABLE','error');setList('issList',[],'ISS provider unavailable: '+e.message);}
   }
