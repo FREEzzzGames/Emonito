@@ -222,11 +222,46 @@ import { setupMobileCollapsibles } from './ui.js';
 
   function setupMobileNavigation(){
     setupMobileCollapsibles();
-    // Keep the original document structure. No DOM reparenting, generated
-    // accordions, duplicate controls, or mobile-only navigation state.
+    // Preserve the original DOM order; CSS makes the category toolbar a fixed mobile nav.
     const resizeMap=()=>{if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));};
     window.addEventListener('resize',resizeMap,{passive:true});
     window.addEventListener('orientationchange',resizeMap,{passive:true});
+
+    const fullMapButton=$('fullMapMode'),metricsButton=$('metricsMode'),mapFab=$('mapFab');
+    const mapPanel=document.querySelector('.map-panel');
+    const prefersReduced=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const setMode=(mode)=>{
+      document.body.classList.toggle('map-fullscreen',mode==='map');
+      document.body.classList.toggle('dashboard-mode',mode==='metrics');
+      fullMapButton?.setAttribute('aria-pressed',String(mode==='map'));
+      metricsButton?.setAttribute('aria-pressed',String(mode==='metrics'));
+      if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
+      if(mode==='metrics')document.querySelector('.side')?.scrollIntoView({block:'start',behavior:prefersReduced()?'auto':'smooth'});
+      if(mode==='map')window.scrollTo({top:0,behavior:prefersReduced()?'auto':'smooth'});
+      updateMapFab();
+    };
+    fullMapButton?.addEventListener('click',()=>setMode(document.body.classList.contains('map-fullscreen')?'normal':'map'));
+    metricsButton?.addEventListener('click',()=>setMode(document.body.classList.contains('dashboard-mode')?'normal':'metrics'));
+    mapFab?.addEventListener('click',()=>{
+      setMode('normal');
+      mapPanel?.scrollIntoView({block:'start',behavior:prefersReduced()?'auto':'smooth'});
+      if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
+    });
+
+    let rafPending=false;
+    function updateMapFab(){
+      if(!mapFab||document.body.classList.contains('map-fullscreen'))return;
+      const rect=mapPanel?.getBoundingClientRect();
+      const shouldShow=!!rect&&(rect.bottom<72||rect.top>window.innerHeight);
+      mapFab.classList.toggle('is-visible',shouldShow);
+    }
+    window.addEventListener('scroll',()=>{
+      if(rafPending)return;
+      rafPending=true;
+      requestAnimationFrame(()=>{rafPending=false;updateMapFab();});
+    },{passive:true});
+    window.addEventListener('resize',updateMapFab,{passive:true});
+    updateMapFab();
   }
   function start(){setupControls();setupMobileNavigation();initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES});document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
