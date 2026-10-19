@@ -633,7 +633,7 @@ h1{font-size:clamp(16px,1.6vw,21px)}
 .emo-history-item{display:block;width:100%;text-align:left;margin:3px 0}
 .emo-inline-alert{margin:-2px -2px 8px;padding:7px;border:1px solid var(--danger);border-radius:6px;color:var(--danger);font-size:10px}
 body.emo-ambient-mode .shell{max-width:none;padding:4px}
-body.emo-ambient-mode .top,body.emo-ambient-mode .category-intro,body.emo-ambient-mode .grid,body.emo-ambient-mode .map-panel>.head,body.emo-ambient-mode .map-tools-row{display:none!important}
+body.emo-ambient-mode .top,body.emo-ambient-mode .category-intro,body.emo-ambient-mode .grid,body.emo-ambient-mode .map-panel>.head{display:none!important}\nbody.emo-ambient-mode .map-tools-row{display:block!important;position:fixed;z-index:1199;top:0;right:0;max-width:210px;padding:0;background:transparent;border:0}
 body.emo-ambient-mode .map-panel{border:0;border-radius:0;box-shadow:none;margin:0}
 body.emo-ambient-mode .map-wrap{height:calc(100dvh - 8px)}
 body.emo-ambient-mode .map{height:100%;min-height:0;border-radius:0}
