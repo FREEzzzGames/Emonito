@@ -623,3 +623,44 @@ body.onboarding-open{overflow:hidden}
     bottom: calc(78px + env(safe-area-inset-bottom));
   }
 }
+
+/* Mobile floating actions: fixed-size, single-line, vertically separated above nav. */
+@media (max-width: 760px) {
+  .map-fab,
+  .map-fab.is-visible {
+    right: 10px !important;
+    bottom: calc(126px + env(safe-area-inset-bottom)) !important;
+    width: max-content !important;
+    max-width: calc(100vw - 20px) !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 10px !important;
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    opacity: .70;
+  }
+  .help-tour {
+    top: auto !important;
+    right: 10px !important;
+    bottom: calc(174px + env(safe-area-inset-bottom)) !important;
+    width: max-content !important;
+    max-width: calc(100vw - 20px) !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 9px !important;
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    opacity: .70;
+  }
+  .help-tour span { font-size: 9px !important; }
+}
