@@ -155,44 +155,103 @@
 
   function setupMobileNavigation(){
     if(!window.matchMedia('(max-width: 760px)').matches)return;
-    const grid=document.querySelector('.grid'), mapPanel=document.querySelector('.map-panel');
+    const grid=document.querySelector('.grid'), mapPanel=document.querySelector('.map-panel'), intro=document.querySelector('.intro');
     if(!grid||!mapPanel||document.getElementById('mobileNav'))return;
-    const drawer=document.createElement('section');
-    drawer.id='mobileDrawer';drawer.className='mobile-drawer';drawer.setAttribute('aria-label','Данные выбранного раздела');
-    drawer.innerHTML='<button class="drawer-handle" id="drawerToggle" type="button" aria-label="Свернуть или развернуть панель"><span></span><b id="drawerTitle">Данные раздела</b><span class="drawer-chevron">⌄</span></button><div class="drawer-scroll" id="drawerScroll"></div>';
-    const scroll=drawer.querySelector('#drawerScroll');
-    const cards=[...grid.children].filter(el=>el!==mapPanel);
-    cards.forEach(el=>scroll.appendChild(el));
-    grid.insertBefore(drawer,mapPanel.nextSibling);
+
+    // Put the existing category filters directly under the app header.
+    const toolbar=intro?.querySelector('.toolbar');
+    if(toolbar){
+      toolbar.classList.add('mobile-category-tabs');
+      document.querySelector('.top')?.insertAdjacentElement('afterend',toolbar);
+    }
+
+    // Flatten metric tiles so every module follows one readable column.
+    const side=grid.querySelector('.side');
+    if(side){[...side.children].forEach(card=>grid.insertBefore(card,side));side.remove();}
+
+    // Map is the primary workspace; location actions become a readable summary card below it.
+    const mapNote=mapPanel.querySelector('.map-note');
+    const summary=document.createElement('section');
+    summary.className='mobile-map-summary panel';
+    summary.innerHTML='<div class="summary-coordinate" id="mobileSelectedCoords">GLOBAL VIEW</div><div class="summary-hint">Нажмите на карту, чтобы посмотреть данные в выбранной точке</div><div class="summary-actions"><button id="mobileLocate" type="button">◎ МОЯ ГЕОЛОКАЦИЯ</button><button id="mobileReset" type="button">↺ СБРОС</button></div>';
+    mapPanel.insertAdjacentElement('afterend',summary);
+    if(mapNote){mapNote.style.display='none';}
+
+    // The same existing module elements are used; only their mobile presentation changes.
+    const cards=[...grid.children].filter(el=>el!==mapPanel&&el!==summary);
+    const titles={
+      quakeCount:'Землетрясения за 24 часа',eventCount:'Природные события',kpValue:'Космическая погода',
+      issLat:'Положение МКС',weatherTemp:'Погода и прогноз',airAQI:'Качество воздуха',
+      quakeList:'Землетрясения',eventList:'Природные катастрофы',solarList:'Солнечная активность',
+      issList:'Телеметрия МКС',neoList:'Околоземные объекты',transportList:'Транспортная инфраструктура',
+      marineList:'Океаны и вода',energyList:'Энергетика',historyChart:'Историческая аналитика'
+    };
+    const titleFor=el=>{
+      const label=el.querySelector('.head .title')?.textContent?.replace(/^\s*\d+\s*\/\s*/,'').trim();
+      if(label)return label;
+      const id=el.querySelector('[id]')?.id;
+      return titles[id]||el.querySelector('.label')?.textContent?.replace(/^\s*\d+\s*\/\s*/,'').trim()||'Данные мониторинга';
+    };
+    cards.forEach((card,index)=>{
+      card.classList.add('mobile-accordion');
+      const head=card.querySelector(':scope > .head');
+      let title=titleFor(card);
+      if(card.classList.contains('metric'))title=titleFor(card);
+      if(head){
+        const titleNode=head.querySelector('.title');
+        if(titleNode)titleNode.textContent=title;
+        head.classList.add('mobile-accordion-head');
+        head.setAttribute('role','button');head.setAttribute('tabindex','0');head.setAttribute('aria-expanded','false');
+        const status=head.querySelector('.status');
+        if(status)status.classList.add('status-badge');
+        const chevron=document.createElement('span');chevron.className='accordion-chevron';chevron.textContent='⌄';head.appendChild(chevron);
+      }else{
+        const headNode=document.createElement('button');
+        headNode.type='button';headNode.className='mobile-accordion-head metric-head';
+        const label=card.querySelector('.label');
+        if(label)label.textContent=title;
+        headNode.innerHTML='<span class="accordion-icon" aria-hidden="true">◈</span><span class="metric-head-title"></span><span class="accordion-chevron">⌄</span>';
+        headNode.querySelector('.metric-head-title').textContent=title;
+        card.insertBefore(headNode,card.firstChild);
+      }
+      const accordionHead=head||card.querySelector('.mobile-accordion-head');
+      const content=document.createElement('div');content.className='mobile-accordion-content';
+      [...card.children].forEach(child=>{if(child!==accordionHead)content.appendChild(child);});
+      card.appendChild(content);
+      const toggle=()=>{
+        const expanded=card.classList.toggle('expanded');
+        accordionHead.setAttribute('aria-expanded',String(expanded));
+      };
+      accordionHead.addEventListener('click',toggle);
+      accordionHead.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+      // Compact summary metrics remain visible in collapsed cards; detailed lists stay inside.
+      if(card.classList.contains('metric'))card.classList.add('metric-accordion');
+      card.dataset.mobileAccordion=String(index);
+    });
+
+    // Persistent category shortcuts. The main map and location summary always remain visible.
     const nav=document.createElement('nav');nav.id='mobileNav';nav.className='mobile-nav';nav.setAttribute('aria-label','Главные разделы');
-    const items=[
-      ['earth','◎','Земля'],['weather','☁','Погода'],['space','◉','Космос'],['transport','✈','Транспорт'],['energy','ϟ','Энергия']
-    ];
-    nav.innerHTML=items.map(([key,icon,label])=>'<button type="button" data-nav-section="'+key+'" aria-pressed="false"><span class="nav-icon" aria-hidden="true">'+icon+'</span><span>'+label+'</span></button>').join('');
+    const items=[['all','▦','Все'],['earth','◎','Земля'],['weather','☁','Погода'],['space','◉','Космос'],['transport','✈','Транспорт'],['energy','ϟ','Энергия']];
+    nav.innerHTML=items.map(([key,icon,label])=>'<button type="button" data-nav-section="'+key+'" aria-pressed="'+(key==='all')+'"><span class="nav-icon" aria-hidden="true">'+icon+'</span><span>'+label+'</span></button>').join('');
     document.body.appendChild(nav);
     const groups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};
     function openSection(key){
-      const allowed=groups[key]||groups.earth;
-      scroll.querySelectorAll('[data-module]').forEach(el=>{el.hidden=!(allowed.has(el.dataset.module)||el.dataset.module===key);});
+      const allowed=groups[key];
+      grid.querySelectorAll('[data-module]').forEach(el=>{
+        el.hidden=key!=='all'&&!(allowed?.has(el.dataset.module)||el.dataset.module===key);
+      });
       nav.querySelectorAll('button').forEach(b=>{const active=b.dataset.navSection===key;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
-      const label=items.find(x=>x[0]===key)?.[2]||'Данные раздела';
-      drawer.querySelector('#drawerTitle').textContent=label+' · данные и графики';
-      drawer.classList.add('open');
-      document.body.dataset.activeSection=key;
-      if(state.map){setTimeout(()=>state.map.invalidateSize({pan:false}),180);}
+      if(toolbar)toolbar.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category===key));
+      if(state.map)setTimeout(()=>state.map.invalidateSize({pan:false}),100);
     }
-    nav.addEventListener('click',e=>{const b=e.target.closest('[data-nav-section]');if(!b)return;const key=b.dataset.navSection;if(document.body.dataset.activeSection===key&&drawer.classList.contains('open')){drawer.classList.remove('open');return;}openSection(key);});
-    drawer.querySelector('#drawerToggle').addEventListener('click',()=>drawer.classList.toggle('expanded'));
-    let startY=0;
-    drawer.querySelector('.drawer-handle').addEventListener('touchstart',e=>{startY=e.touches[0].clientY;},{passive:true});
-    drawer.querySelector('.drawer-handle').addEventListener('touchend',e=>{const dy=e.changedTouches[0].clientY-startY;if(dy>35)drawer.classList.remove('expanded');else if(dy< -35)drawer.classList.add('expanded');},{passive:true});
-    // Default state: map first, panel collapsed. No required gestures.
-    scroll.querySelectorAll('[data-module]').forEach(el=>{el.hidden=true;});
-    const closeOnEscape=e=>{if(e.key==='Escape')drawer.classList.remove('open');};
-    document.addEventListener('keydown',closeOnEscape);
+    nav.addEventListener('click',e=>{const b=e.target.closest('[data-nav-section]');if(b)openSection(b.dataset.navSection);});
+    document.getElementById('mobileLocate')?.addEventListener('click',locateUser);
+    document.getElementById('mobileReset')?.addEventListener('click',()=>{if(state.map)state.map.setView([20,0],2);state.location=null;text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');});
+    const syncCoords=()=>{const source=document.getElementById('selectedCoords'),target=document.getElementById('mobileSelectedCoords');if(source&&target){const observer=new MutationObserver(()=>target.textContent=source.textContent);observer.observe(source,{childList:true,subtree:true,characterData:true});target.textContent=source.textContent;}};
+    syncCoords();
     window.addEventListener('resize',()=>{if(state.map)state.map.invalidateSize({pan:false});},{passive:true});
+    openSection('all');
   }
-
   function start(){setupControls();setupMobileNavigation();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
