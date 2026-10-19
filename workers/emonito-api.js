@@ -15,7 +15,7 @@ function dynamicSource(key, url) {
   if (key === 'weather') return 'https://api.open-meteo.com/v1/forecast?' + new URLSearchParams({ latitude: q.get('latitude') || '', longitude: q.get('longitude') || '', current: q.get('current') || 'temperature_2m,relative_humidity_2m,uv_index,precipitation', hourly: q.get('hourly') || '', daily: q.get('daily') || '', forecast_days: q.get('forecast_days') || '1', timezone: q.get('timezone') || 'auto' });
   if (key === 'air') return 'https://air-quality-api.open-meteo.com/v1/air-quality?' + new URLSearchParams({ latitude: q.get('latitude') || '', longitude: q.get('longitude') || '', current: q.get('current') || 'european_aqi,pm2_5,pm10', hourly: q.get('hourly') || '', forecast_days: q.get('forecast_days') || '1', timezone: q.get('timezone') || 'auto' });
   if (key === 'elevation') return 'https://api.open-meteo.com/v1/elevation?' + new URLSearchParams({ latitude: q.get('latitude') || '', longitude: q.get('longitude') || '' });
-  if (key === 'smardSeries') { const stamp = q.get('timestamp') || ''; if (!/^\\d{10,16}$/.test(stamp)) throw new Error('invalid_timestamp'); return 'https://www.smard.de/app/chart_data/410/DE/410_DE_hour_' + stamp + '.json'; }
+  if (key === 'smardSeries') { const stamp = q.get('timestamp') || ''; if (stamp.length < 10 || stamp.length > 16 || !Number.isFinite(Number(stamp))) throw new Error('invalid_timestamp'); return 'https://www.smard.de/app/chart_data/410/DE/410_DE_hour_' + stamp + '.json'; }
   return null;
 }
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Cache-Control': 'public, max-age=30' };
