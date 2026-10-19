@@ -650,3 +650,8 @@ body.emo-ambient-mode .emo-inspector{top:12px;left:12px;right:auto}
  .emo-inspector-grid strong{font-size:15px}
  body.emo-ambient-mode .map-wrap{height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
 }
+
+.earth-watch-info{margin:0 12px 10px;color:var(--muted);font-size:10px}
+.earth-watch-info summary{cursor:pointer;color:var(--cyan);padding:5px 0}
+.earth-watch-info p{margin:4px 0 0;line-height:1.45}
+.emo-inspector-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
