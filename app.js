@@ -1,10 +1,10 @@
 /* EMONITO — open-data monitoring dashboard. No secrets are embedded. */
 import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
 import { createApi } from './api.js?v=api-rewrite-1';
-import { initMap as initializeMap } from './map.js?v=map-rewrite-1';
+import { initMap as initializeMap } from './map.js?v=solar-terminator-1';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
 import { initMonitoringModules } from './modules.js?v=modules-1';
-import { initPlanetExplorer } from './planet-explorer.js?v=planet-explorer-1';
+import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
 (() => {
   const $ = id => document.getElementById(id);
   const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
@@ -183,6 +183,14 @@ import { initPlanetExplorer } from './planet-explorer.js?v=planet-explorer-1';
   function setClock(){text('clock','UTC '+new Date().toISOString().slice(11,19));}
   function setupControls(){
     $('refreshAll')?.addEventListener('click',refreshAll);
+    const explorerToggle = $('planetExplorerToggle');
+    const explorer = $('planetExplorer');
+    explorerToggle?.addEventListener('click', () => {
+      if (!explorer) return;
+      explorer.hidden = !explorer.hidden;
+      explorerToggle.setAttribute('aria-expanded', String(!explorer.hidden));
+      explorerToggle.textContent = explorer.hidden ? 'Открыть инструменты +' : 'Скрыть инструменты −';
+    });
     $('weatherLocate')?.addEventListener('click',locateUser);
 
     const categoryGroups={
@@ -229,6 +237,12 @@ import { initPlanetExplorer } from './planet-explorer.js?v=planet-explorer-1';
     $('layerMenuToggle')?.addEventListener('click',()=>{const menu=$('layerMenu'),button=$('layerMenuToggle');if(!menu)return;menu.hidden=!menu.hidden;button.setAttribute('aria-expanded',String(!menu.hidden));});
     document.querySelectorAll('[data-layer-toggle]').forEach(input=>input.addEventListener('change',()=>{
       const key=input.dataset.layerToggle,layer=state.layers[key];
+      if(key==='solarTerminator'){
+        if(!layer)return;
+        if(input.checked)layer.addTo(state.map);
+        else state.map.removeLayer(layer);
+        return;
+      }
       if(key==='satellite'||key==='clouds'){
         const mode=$('imageryMode'),other=key==='satellite'?'clouds':'satellite';
         if(input.checked){
