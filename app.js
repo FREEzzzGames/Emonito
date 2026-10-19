@@ -8,7 +8,7 @@ import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
 import { initLocalZenith } from './local-zenith.js?v=ambient-local-radar-1';
 import { initAmbientEngine } from './ambient-engine.js?v=ambient-local-radar-1';
 import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-intercept-1';
-import { initEarthWatch } from './earth-watch.js?v=earth-watch-1';
+import { initEarthWatch } from './earth-watch.js?v=earth-watch-2';
 (() => {
   const $ = id => document.getElementById(id);
   const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
