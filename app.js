@@ -50,7 +50,7 @@
     const satellite=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_CorrectedReflectance_TrueColor',format:'image/jpeg',transparent:false,version:'1.1.1',time:new Date(Date.now()-86400000).toISOString().slice(0,10),attribution:'NASA GIBS / EOSDIS',tileSize:256});
     const clouds=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_Cloud_Top_Temp_Day',format:'image/png',transparent:true,version:'1.1.1',attribution:'NASA GIBS'});
     state.map=map;state.layers={base,satellite,clouds,quakes:L.layerGroup().addTo(map),events:L.layerGroup().addTo(map),iss:L.layerGroup().addTo(map),air:L.layerGroup(),transport:L.layerGroup(),aircraft:L.layerGroup(),energy:L.layerGroup()};
-    L.control.layers({'Street map':base,'NASA satellite imagery':satellite},{'Cloud-top temperature':clouds,'Earthquakes':state.layers.quakes,'Natural events':state.layers.events,'ISS':state.layers.iss,'Transport data':state.layers.transport,'Energy infrastructure':state.layers.energy},{collapsed:true,position:'topright'}).addTo(map);
+    L.control.layers({'Street map':base,'NASA satellite imagery':satellite},{'Cloud-top temperature':clouds,'Earthquakes':state.layers.quakes,'Natural events':state.layers.events,'ISS':state.layers.iss,'Transport data':state.layers.transport,'Aircraft (OpenSky)':state.layers.aircraft,'Energy infrastructure':state.layers.energy},{collapsed:true,position:'topright'}).addTo(map);
     map.on('click',e=>{state.location={latitude:e.latlng.lat,longitude:e.latlng.lng};text('selectedCoords',fmt(e.latlng.lat,3)+'°, '+fmt(e.latlng.lng,3)+'°');loadWeather();loadAir();loadMarine();loadHistory();});
     $('mapLocate').addEventListener('click',()=>locateUser());
     $('mapReset').addEventListener('click',()=>map.setView([20,0],2));
@@ -148,9 +148,9 @@
     $('weatherLocate')?.addEventListener('click',locateUser);
     document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b===btn));const category=btn.dataset.category;document.querySelectorAll('[data-module]').forEach(el=>{el.hidden=category!=='all'&&el.dataset.module!==category;});}));
     $('imageryMode')?.addEventListener('change',e=>{if(!state.map)return;state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);});
-    $('mapRefreshTransport')?.addEventListener('click',loadTransport);
+    $('mapRefreshTransport')?.addEventListener('click',()=>{loadTransport();loadAircraft();});
   }
-  async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather(),loadNEO(),loadTransport(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
+  async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather(),loadNEO(),loadTransport(),loadAircraft(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
   function start(){setupControls();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
