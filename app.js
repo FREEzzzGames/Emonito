@@ -262,7 +262,13 @@ import { setupMobileCollapsibles } from './ui.js';
       if(!needsRetry){actions?.remove();return;}
       if(!actions){actions=document.createElement('span');actions.className='status-actions';status.insertAdjacentElement('afterend',actions);}
       if(!actions.querySelector('.status-info')){const info=document.createElement('button');info.type='button';info.className='status-info';info.textContent='ⓘ';info.title='Пояснение о статусе источника';info.setAttribute('aria-label',info.title);info.setAttribute('aria-expanded','false');info.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();let note=actions.querySelector('.status-explanation');if(note){note.remove();info.setAttribute('aria-expanded','false');return;}note=document.createElement('span');note.className='status-explanation';note.textContent=/ZOOM TO LEVEL/i.test(status.textContent)?'Для этого слоя нужен региональный масштаб. Нажмите «Приблизить», чтобы перейти к уровню 5.':'Источник не ответил или ограничил доступ. Проверьте соединение и повторите запрос.';actions.append(note);info.setAttribute('aria-expanded','true');});actions.append(info);}
-      if(!actions.querySelector('.status-retry')){const retry=document.createElement('button');retry.type='button';retry.className='status-retry';retry.textContent=/ZOOM TO LEVEL/i.test(text)?'Приблизить':'Повторить';retry.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();handler();});actions.append(retry);}
+      let retry=actions.querySelector('.status-retry');
+      if(!retry){retry=document.createElement('button');retry.type='button';retry.className='status-retry';retry.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();handler();});actions.append(retry);}
+      // Status can change after a retry; never leave a stale "Приблизить" action beside an API error.
+      retry.textContent=/ZOOM TO LEVEL/i.test(status.textContent)?'Приблизить':'Повторить';
+      retry.setAttribute('aria-label',retry.textContent+' — '+(status.closest('.panel')?.querySelector('.title')?.textContent||'источник данных'));
+      const info=actions.querySelector('.status-info');
+      if(info)info.title=/ZOOM TO LEVEL/i.test(status.textContent)?'Для этого слоя нужен региональный масштаб.':'Источник не ответил или ограничил доступ. Можно повторить запрос.';
     };
     document.querySelectorAll('.status[id]').forEach(enhance);
     const observer=new MutationObserver(records=>records.forEach(record=>{const el=record.target.nodeType===1?record.target:record.target.parentElement;if(el?.matches?.('.status[id]'))enhance(el);else el?.closest?.('.status[id]')&&enhance(el.closest('.status[id]'));}));
