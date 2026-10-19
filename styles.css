@@ -408,3 +408,5 @@ body.dashboard-mode .map-panel{display:block}
 @media(max-width:980px){.grid>.side{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.map-panel{grid-column:1/-1}.map-panel>.head{display:flex;flex-wrap:wrap}.category-intro{padding:9px 0 10px;gap:8px}.category-intro>div:first-child{display:none}.category-intro .toolbar{width:100%}.grid{gap:8px}.grid>.side{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.category-screen-item{animation:none}}
 @media(prefers-reduced-motion:reduce){.category-screen-item{animation:none}}
+
+.category-screen-hidden{display:none!important}
