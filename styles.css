@@ -198,3 +198,16 @@
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
 }
+
+/* BEM additions for mobile collapsible panels. */
+.panel__toggle { display:none; margin-left:auto; min-width:30px; min-height:30px; padding:2px 8px; border:1px solid var(--line); background:transparent; color:var(--accent); font-size:18px; line-height:1; }
+.panel__toggle[hidden] { display:none; }
+.panel--collapsed > :not(.head) { display:none !important; }
+.panel__toggle, .panel, .toolbar button { transition: background-color .18s ease, border-color .18s ease, color .18s ease; }
+@media (max-width:760px) {
+  .panel__toggle { display:inline-flex; align-items:center; justify-content:center; border-radius:7px; }
+  .panel--collapsed > .head { border-bottom:0; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .panel, .toolbar button, .panel__toggle { transition:none; }
+}
