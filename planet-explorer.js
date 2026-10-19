@@ -57,7 +57,6 @@ function node(tag, className, text) {
 }
 export function initPlanetExplorer({ state }) {
   if (!$('planetBriefing')) return;
-  const map = state?.map;
   const watch = new Set(readStore().watch || ['space','earth']);
   let activeExpedition = null;
   let stepIndex = 0;
@@ -194,9 +193,11 @@ export function initPlanetExplorer({ state }) {
   }
   function doExpeditionAction(action) {
     if (!activeExpedition) return;
-    const layerMap={aurora:'auroraToggle',night:'nightToggle',clouds:null,quakes:'quakesToggle', 'iss-trail':'issTrailToggle'};
+    const layerMap={aurora:'auroraToggle',night:'nightToggle'};
     const layerId=layerMap[action];
     if (layerId && $(layerId)) { $(layerId).checked=true;$(layerId).dispatchEvent(new Event('change',{bubbles:true})); }
+    if (action==='quakes') { const cb=document.querySelector('[data-layer-toggle="quakes"]'); if(cb&&!cb.checked){cb.checked=true;cb.dispatchEvent(new Event('change',{bubbles:true}));} }
+    if (action==='night-mode' && $('nightToggle')) { $('nightToggle').checked=true;$('nightToggle').dispatchEvent(new Event('change',{bubbles:true})); }
     if (action==='kp') openTarget('#kpValue','space');
     if (action==='aurora') { openTarget('#moduleAurora','space');if($('auroraToggle')){$('auroraToggle').checked=true;$('auroraToggle').dispatchEvent(new Event('change',{bubbles:true}));} }
     if (action==='clouds') { const select=$('imageryMode');if(select){select.value='clouds';select.dispatchEvent(new Event('change',{bubbles:true}));openTarget('#map','earth');} }
