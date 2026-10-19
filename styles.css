@@ -3,7 +3,7 @@
 /* Readable mobile dashboard: map, location summary, single-column accordions */
 @media(max-width:760px){
   :root{--bg:#121619;--panel:#1a2024;--line:#354149;--muted:#b0bdc4;--text:#f2f6f8;--accent:#baff3d;--cyan:#4bd7ff;font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  html,body{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  html{min-height:100%;overflow-x:hidden;overflow-y:scroll;-webkit-overflow-scrolling:touch}body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:visible;touch-action:pan-y}
   body{overscroll-behavior-y:contain;background:#121619}
   .shell{height:auto;min-height:100dvh;display:flex;flex-direction:column;overflow:visible;padding:0 0 calc(16px + env(safe-area-inset-bottom))}
   .top{position:relative;top:auto;z-index:20;min-height:58px;padding:8px 13px;background:rgba(8,12,15,.97)}
@@ -16,7 +16,7 @@
   .intro .toolbar::-webkit-scrollbar{display:none}
   .intro .toolbar button{flex:0 0 auto;min-width:max-content;min-height:40px;padding:8px 13px;border-radius:9px;font-size:12px;font-weight:700;white-space:nowrap;background:#1a2227;border-color:#344650}
   .intro .toolbar button.active{background:#0b3445;color:#6be0ff;border-color:#1ca9df}
-  .grid{display:flex;flex-direction:column;gap:10px;padding:10px;overflow:visible;min-height:0}
+  .grid{display:flex;flex-direction:column;gap:10px;padding:10px;overflow:visible;min-height:0;touch-action:pan-y}
   .map-panel{position:relative;inset:auto;display:flex;flex-direction:column;min-height:0;border:1px solid #344650;border-radius:12px;overflow:hidden}
   .map-panel>.head{min-height:43px;padding:9px 12px;background:#1a2227}
   .map-panel .title{font-size:12px;font-weight:700;letter-spacing:.04em}
@@ -52,7 +52,7 @@
   .head{min-height:48px;padding:10px 12px;gap:8px;flex-wrap:wrap}
   .head .title{font-size:15px;font-weight:800;letter-spacing:0}
   .status{font-size:11px}
-  .list{max-height:none;overflow:visible}
+  .list{max-height:45dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
   .data-row{padding:12px;gap:12px;border-color:#303a40}
   .row-title{font-size:14px;line-height:1.45;color:#f1f6f8}
   .row-detail{font-size:12px;line-height:1.5;color:#b8c5cb}
