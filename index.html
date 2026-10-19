@@ -5,30 +5,10 @@
 <meta name="theme-color" content="#050607"><meta name="description" content="Emonito — глобальный мониторинг Земли по открытым научным источникам.">
 <title>EMONITO — Earth Monitor</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<link rel="stylesheet" href="styles.css?v=satellite-intercept-1">
+<link rel="stylesheet" href="styles.css?v=category-screens-1">
 </head>
 <body><div class="shell">
 <header class="top"><div class="brand"><span class="mark" aria-hidden="true"></span><div><h1>EMONITO</h1><div class="sub">EARTH MONITORING SYSTEM / OPEN DATA</div></div></div><div class="top-right"><span><i class="dot"></i>PUBLIC SOURCES</span><span id="clock">UTC --:--:--</span><button id="refreshAll" type="button">↻ REFRESH DATA</button></div></header>
-<section class="intro"><div><div class="eyebrow">PLANET EARTH CONTROL DECK / 12 MONITORING DOMAINS</div><h2>Observe the living planet.</h2><p>Реальные открытые данные. Временные метки и недоступность источников показываются явно; прогнозы и архивные оценки не выдаются за прямые измерения.</p></div><div class="toolbar" aria-label="Filter monitoring domains"><button data-category="earth">EARTH</button><button data-category="weather">WEATHER</button><button data-category="space">SPACE</button><button data-category="transport">TRANSPORT</button><button data-category="energy">ENERGY</button></div></section>
-<div class="planet-explorer-toggle"><div><strong>ПЛАНЕТАРНЫЙ РАДАР</strong><span>Сводка · экспедиции · история</span></div><button id="planetExplorerToggle" type="button" aria-expanded="false">Открыть инструменты +</button></div>
-<section class="planet-explorer" id="planetExplorer" hidden aria-labelledby="planetExplorerTitle">
-  <div class="planet-section-head"><div><div class="eyebrow">LIVE DISCOVERY / EVIDENCE FIRST</div><h2 id="planetExplorerTitle">Планетарный радар</h2><p>Не только показатели: наблюдайте изменения, исследуйте события и проверяйте первоисточники.</p></div><button id="briefingRefresh" type="button">↻ Перечитать сводку</button></div>
-  <div class="planet-briefing panel" id="planetBriefing">
-    <div class="planet-subhead"><div><span class="planet-kicker">PLANETARY BRIEFING</span><h3>Что заслуживает внимания</h3><p>Карточки строятся по данным уже загруженных модулей. Если источник недоступен, это будет указано явно.</p></div><span class="status" id="briefingStatus">ОЖИДАНИЕ ДАННЫХ</span></div>
-    <div class="briefing-cards" id="planetBriefingCards"><p class="empty">Загружаем показатели из существующих модулей…</p></div>
-    <div class="briefing-footer"><span>Источники: существующие модули EMONITO</span><button id="planetShowChanges" type="button">Перейти к истории изменений ↓</button></div>
-  </div>
-  <div class="planet-explorer-grid">
-    <section class="panel planet-block" aria-labelledby="expeditionHeading"><div class="planet-subhead"><div><span class="planet-kicker">FIELD GUIDE</span><h3 id="expeditionHeading">Короткие экспедиции</h3><p>Пошаговые исследования реальных данных без игровых очков и выдуманных результатов.</p></div></div>
-      <div class="expedition-list" id="expeditionList"></div>
-      <div class="expedition-player" id="expeditionPlayer" hidden><div class="expedition-player-top"><span id="expeditionCounter">ШАГ 1 / 3</span><button id="expeditionClose" type="button" aria-label="Закрыть экспедицию">×</button></div><h4 id="expeditionTitle"></h4><p id="expeditionBody"></p><div class="expedition-player-actions"><button id="expeditionBack" type="button" disabled>← Назад</button><button id="expeditionNext" type="button">Следующий шаг →</button></div></div>
-    </section>
-    <section class="panel planet-block" aria-labelledby="watchHeading"><div class="planet-subhead"><div><span class="planet-kicker">MY PLANET</span><h3 id="watchHeading">Мои интересы</h3><p>Выберите темы для персональной сводки. Настройка хранится только в этом браузере.</p></div></div><div class="watch-options" id="planetWatch"></div><div class="watch-note">Это локальная настройка интерфейса. Уведомления и фоновые проверки здесь не включаются.</div></section>
-  </div>
-  <section class="panel planet-block timeline-panel" aria-labelledby="timelineHeading"><div class="planet-subhead"><div><span class="planet-kicker">CHANGE EXPLORER</span><h3 id="timelineHeading">История наблюдений</h3><p>Изменения между полученными значениями и успешные ответы источников. Время в журнале — время получения приложением, если отдельно не указано иное.</p></div><button id="timelineClear" type="button">Очистить историю</button></div><ol class="planet-timeline" id="planetTimeline"><li class="empty">История появится после первых обновлений.</li></ol></section>
-  <div class="planet-disclaimer"><strong>Важно:</strong> изменения в двух точках наблюдения не обязательно означают значимое событие или причинную связь. Проверяйте время, охват и исходный источник.</div>
-</section>
-<main class="grid">
 <section class="panel map-panel" data-module="earth"><div class="head"><span class="title">01 / GEOGRAPHY + SATELLITE IMAGERY</span><div class="map-head-tools"><select id="imageryMode" aria-label="Map imagery"><option value="street">Street map</option><option value="satellite">NASA satellite layer</option><option value="clouds">Cloud-top layer</option></select><span class="status" id="mapStatus">INITIALIZING</span></div><div class="map-mode-controls" aria-label="Режим отображения"><button id="fullMapMode" type="button" aria-pressed="false">⛶ ПОЛНАЯ КАРТА</button><button id="metricsMode" type="button" aria-pressed="false">▦ МЕТРИКИ</button></div></div><div class="map-wrap"><div id="map" class="map" aria-label="Interactive geographic map"></div><div class="map-note"><div id="selectedCoords">GLOBAL VIEW</div><div>CLICK MAP TO INSPECT WEATHER / AIR QUALITY</div><button id="mapLocate" type="button">USE MY LOCATION</button> <button id="mapReset" type="button">RESET</button></div></div>
 <div class="map-tools-row">
   <button id="layerMenuToggle" type="button" aria-expanded="false">☷ СЛОИ КАРТЫ</button>
@@ -50,6 +30,28 @@
   </label>
 </div>
 </section>
+
+<section class="intro category-intro"><div><div class="eyebrow">PLANET EARTH CONTROL DECK / 12 MONITORING DOMAINS</div><h2>Observe the living planet.</h2><p>Реальные открытые данные. Временные метки и недоступность источников показываются явно; прогнозы и архивные оценки не выдаются за прямые измерения.</p></div><div class="toolbar" aria-label="Filter monitoring domains"><button data-category="earth">EARTH</button><button data-category="weather">WEATHER</button><button data-category="space">SPACE</button><button data-category="transport">TRANSPORT</button><button data-category="energy">ENERGY</button></div></section>
+<div class="planet-explorer-toggle category-tools-toggle"><div><strong>ПЛАНЕТАРНЫЙ РАДАР</strong><span>Сводка · экспедиции · история</span></div><button id="planetExplorerToggle" type="button" aria-expanded="false">Открыть инструменты +</button></div>
+<section class="planet-explorer" id="planetExplorer" hidden aria-labelledby="planetExplorerTitle">
+  <div class="planet-section-head"><div><div class="eyebrow">LIVE DISCOVERY / EVIDENCE FIRST</div><h2 id="planetExplorerTitle">Планетарный радар</h2><p>Не только показатели: наблюдайте изменения, исследуйте события и проверяйте первоисточники.</p></div><button id="briefingRefresh" type="button">↻ Перечитать сводку</button></div>
+  <div class="planet-briefing panel" id="planetBriefing">
+    <div class="planet-subhead"><div><span class="planet-kicker">PLANETARY BRIEFING</span><h3>Что заслуживает внимания</h3><p>Карточки строятся по данным уже загруженных модулей. Если источник недоступен, это будет указано явно.</p></div><span class="status" id="briefingStatus">ОЖИДАНИЕ ДАННЫХ</span></div>
+    <div class="briefing-cards" id="planetBriefingCards"><p class="empty">Загружаем показатели из существующих модулей…</p></div>
+    <div class="briefing-footer"><span>Источники: существующие модули EMONITO</span><button id="planetShowChanges" type="button">Перейти к истории изменений ↓</button></div>
+  </div>
+  <div class="planet-explorer-grid">
+    <section class="panel planet-block" aria-labelledby="expeditionHeading"><div class="planet-subhead"><div><span class="planet-kicker">FIELD GUIDE</span><h3 id="expeditionHeading">Короткие экспедиции</h3><p>Пошаговые исследования реальных данных без игровых очков и выдуманных результатов.</p></div></div>
+      <div class="expedition-list" id="expeditionList"></div>
+      <div class="expedition-player" id="expeditionPlayer" hidden><div class="expedition-player-top"><span id="expeditionCounter">ШАГ 1 / 3</span><button id="expeditionClose" type="button" aria-label="Закрыть экспедицию">×</button></div><h4 id="expeditionTitle"></h4><p id="expeditionBody"></p><div class="expedition-player-actions"><button id="expeditionBack" type="button" disabled>← Назад</button><button id="expeditionNext" type="button">Следующий шаг →</button></div></div>
+    </section>
+    <section class="panel planet-block" aria-labelledby="watchHeading"><div class="planet-subhead"><div><span class="planet-kicker">MY PLANET</span><h3 id="watchHeading">Мои интересы</h3><p>Выберите темы для персональной сводки. Настройка хранится только в этом браузере.</p></div></div><div class="watch-options" id="planetWatch"></div><div class="watch-note">Это локальная настройка интерфейса. Уведомления и фоновые проверки здесь не включаются.</div></section>
+  </div>
+  <section class="panel planet-block timeline-panel" aria-labelledby="timelineHeading"><div class="planet-subhead"><div><span class="planet-kicker">CHANGE EXPLORER</span><h3 id="timelineHeading">История наблюдений</h3><p>Изменения между полученными значениями и успешные ответы источников. Время в журнале — время получения приложением, если отдельно не указано иное.</p></div><button id="timelineClear" type="button">Очистить историю</button></div><ol class="planet-timeline" id="planetTimeline"><li class="empty">История появится после первых обновлений.</li></ol></section>
+  <div class="planet-disclaimer"><strong>Важно:</strong> изменения в двух точках наблюдения не обязательно означают значимое событие или причинную связь. Проверяйте время, охват и исходный источник.</div>
+</section>
+<main class="grid">
+
 <section class="side">
 <article class="panel metric" data-module="geology"><div class="label">02 / EARTHQUAKES · 24H</div><div><div class="value" id="quakeCount">—</div><div class="detail">USGS public feed</div><div class="detail" id="quakePeak">Largest: —</div></div></article>
 <article class="panel metric" data-module="disasters"><div class="label">03 / OPEN NATURAL EVENTS</div><div><div class="value" id="eventCount">—</div><div class="detail">NASA EONET</div></div></article>
@@ -176,5 +178,5 @@
 </section>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=satellite-intercept-1"></script>
+<script type="module" src="app.js?v=category-screens-1"></script>
 </body></html>
