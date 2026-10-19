@@ -458,6 +458,33 @@ import { setupMobileCollapsibles } from './ui.js';
     }
   }
 
-  function start(){setupControls();setupMobileNavigation();initOnboarding();initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES});document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
+  function start(){
+    if(start.started)return;
+    start.started=true;
+    const safe=(label,fn)=>{
+      try{return fn();}
+      catch(error){
+        console.error('[EMONITO startup] '+label,error);
+        const message=String(error?.message||error||'unknown error').slice(0,90);
+        if(label==='map')$status('mapStatus','MAP INIT ERROR · '+message,'error');
+        else if(label==='controls')$status('mapStatus','UI INIT ERROR · '+message,'error');
+        return undefined;
+      }
+    };
+    // Initialize each subsystem independently so a non-critical UI error cannot
+    // prevent the map or live data requests from starting.
+    safe('controls',setupControls);
+    safe('mobile navigation',setupMobileNavigation);
+    safe('onboarding',initOnboarding);
+    safe('map',()=>initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES}));
+    safe('default category',()=>document.querySelector('[data-category="earth"]')?.click());
+    safe('clock',()=>{setClock();setInterval(()=>safe('clock tick',setClock),1000);});
+    safe('data refresh',()=>{
+      refreshAll();
+      setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);
+      setInterval(loadNEO,30*60*1000);
+      setInterval(loadHistory,60*60*1000);
+    });
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
