@@ -60,11 +60,39 @@ export function initMap(deps) {
   clouds.on('tileload', () => $status('mapStatus', 'CLOUD LAYER LOADED', 'ok'));
   clouds.on('tileerror', () => $status('mapStatus', 'CLOUD LAYER UNAVAILABLE', 'error'));
 
+  const solarTerminator = Leaflet.polyline([], {
+    color: '#58d9ff', weight: 2, opacity: 0.95, dashArray: '5 5',
+    interactive: false, className: 'solar-terminator-line'
+  });
+  function updateSolarTerminator() {
+    const now = new Date();
+    const start = Date.UTC(now.getUTCFullYear(), 0, 0);
+    const day = (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000;
+    const gamma = 2 * Math.PI / 365 * (day - 1 + (now.getUTCHours() - 12) / 24);
+    const declination = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma)
+      - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma)
+      - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+    const equationOfTime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma)
+      - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+    const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + now.getUTCSeconds() / 60;
+    const subsolarLongitude = 180 - (utcMinutes + equationOfTime) / 4;
+    const points = [];
+    for (let longitude = -180; longitude <= 180; longitude += 2) {
+      const hourAngle = (longitude - subsolarLongitude) * Math.PI / 180;
+      const latitude = Math.atan2(-Math.cos(hourAngle), Math.tan(declination)) * 180 / Math.PI;
+      if (Number.isFinite(latitude)) points.push([Math.max(-89.8, Math.min(89.8, latitude)), longitude]);
+    }
+    solarTerminator.setLatLngs(points);
+  }
+  updateSolarTerminator();
+  window.setInterval(updateSolarTerminator, 60000);
+
   state.map = map;
   state.layers = {
     base,
     satellite,
     clouds,
+    solarTerminator,
     quakes: Leaflet.layerGroup().addTo(map),
     events: Leaflet.layerGroup().addTo(map),
     iss: Leaflet.layerGroup().addTo(map),
