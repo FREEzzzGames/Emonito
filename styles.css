@@ -126,3 +126,6 @@
 }
 @media(min-width:761px){.mobile-nav{display:none!important}.mobile-map-summary{display:none!important}}
 @media(prefers-reduced-motion:reduce){.accordion-chevron{transition:none!important}}
+
+/* The mobile bottom navigation was intentionally removed. */
+#mobileNav,.mobile-nav{display:none!important}
