@@ -48,7 +48,9 @@ jobs:
           refs = set()
           for pattern in patterns:
               refs.update(re.findall(pattern, js))
-          missing = sorted(refs - parser.ids)
+          # These IDs are created by setupMobileNavigation() at runtime, not in static HTML.
+          dynamic_ids = {'mobileSelectedCoords', 'mobileLocate', 'mobileReset'}
+          missing = sorted(refs - parser.ids - dynamic_ids)
           if parser.errors or missing:
               print('HTML errors:', parser.errors)
               print('Missing element IDs:', missing)
