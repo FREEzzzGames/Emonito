@@ -168,17 +168,7 @@
   function setupControls(){
     $('refreshAll')?.addEventListener('click',refreshAll);
     $('weatherLocate')?.addEventListener('click',locateUser);
-    // These controls are created later by setupMobileNavigation(); delegate clicks
-    // so they work even though the buttons do not exist during setupControls().
-    document.addEventListener('click',e=>{
-      if(e.target.closest('#mobileLocate'))locateUser();
-      if(e.target.closest('#mobileReset')){
-        state.location=null;
-        if(state.map)state.map.setView([20,0],2);
-        text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');
-        loadWeather();loadAir();loadMarine();loadHistory();
-      }
-    });
+
     const categoryGroups={
       earth:new Set(['earth','geology','disasters','ecology','oceans']),
       weather:new Set(['weather','ecology','history']),
@@ -193,36 +183,13 @@
         b.classList.toggle('active',active);
         b.setAttribute('aria-pressed',String(active));
       });
-      const mobile=window.matchMedia('(max-width: 760px)').matches;
-      const mapPanel=document.querySelector('.map-panel');
-      const mapSummary=document.querySelector('.mobile-map-summary');
-      // On phones, a category must replace the current workspace, not merely
-      // change the active pill below a map that fills the viewport.
-      const showMap=!mobile||category==='earth'||category==='transport';
-      if(mapPanel)mapPanel.hidden=!showMap;
-      if(mapSummary)mapSummary.hidden=!showMap;
-      const modules=[...document.querySelectorAll('[data-module]')];
-      modules.forEach(el=>{
+      // The map is a permanent workspace. Tabs filter data panels only;
+      // category changes never hide the map or mutate the document structure.
+      document.querySelectorAll('[data-module]').forEach(el=>{
         if(el.classList.contains('map-panel'))return;
         el.hidden=!!allowed&&!allowed.has(el.dataset.module);
       });
       state.selectedCategory=category;
-      if(mobile){
-        // A category switch must expose usable content immediately, not leave
-        // every matching card collapsed below the fold.
-        document.querySelectorAll('.mobile-accordion.expanded').forEach(card=>{
-          card.classList.remove('expanded');
-          card.querySelector('.mobile-accordion-head')?.setAttribute('aria-expanded','false');
-        });
-        const firstVisible=modules.find(el=>!el.classList.contains('map-panel')&&!el.hidden);
-        if(firstVisible){
-          firstVisible.classList.add('expanded');
-          firstVisible.querySelector('.mobile-accordion-head')?.setAttribute('aria-expanded','true');
-          requestAnimationFrame(()=>firstVisible.scrollIntoView({block:'start',behavior:'auto'}));
-        }else if(showMap){
-          requestAnimationFrame(()=>mapPanel?.scrollIntoView({block:'start',behavior:'auto'}));
-        }
-      }
       if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
     }
     document.querySelectorAll('[data-category]').forEach(btn=>{
@@ -290,83 +257,11 @@
   async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather(),loadNEO(),loadTransport(),loadAircraft(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
 
   function setupMobileNavigation(){
-    if(!window.matchMedia('(max-width: 760px)').matches)return;
-    const grid=document.querySelector('.grid'), mapPanel=document.querySelector('.map-panel'), intro=document.querySelector('.intro');
-    if(!grid||!mapPanel)return;
-
-    // Put the existing category filters directly under the app header.
-    const toolbar=intro?.querySelector('.toolbar');
-    if(toolbar){
-      toolbar.classList.add('mobile-category-tabs');
-      document.querySelector('.top')?.insertAdjacentElement('afterend',toolbar);
-    }
-
-    // Flatten metric tiles so every module follows one readable column.
-    const side=grid.querySelector('.side');
-    if(side){[...side.children].forEach(card=>grid.insertBefore(card,side));side.remove();}
-
-    // Map is the primary workspace; location actions become a readable summary card below it.
-    const summary=document.createElement('section');
-    summary.className='mobile-map-summary panel';
-    summary.innerHTML='<div class="summary-coordinate" id="mobileSelectedCoords">GLOBAL VIEW</div><div class="summary-hint">Нажмите на карту, чтобы посмотреть данные в выбранной точке</div><div class="summary-actions"><button id="mobileLocate" type="button">◎ МОЯ ГЕОЛОКАЦИЯ</button><button id="mobileReset" type="button">↺ СБРОС</button></div>';
-    mapPanel.insertAdjacentElement('afterend',summary);
-
-    // The same existing module elements are used; only their mobile presentation changes.
-    const cards=[...grid.children].filter(el=>el!==mapPanel&&el!==summary);
-    const titles={
-      quakeCount:'Землетрясения за 24 часа',eventCount:'Природные события',kpValue:'Космическая погода',
-      issLat:'Положение МКС',weatherTemp:'Погода и прогноз',airAQI:'Качество воздуха',
-      quakeList:'Землетрясения',eventList:'Природные катастрофы',solarList:'Солнечная активность',
-      issList:'Телеметрия МКС',neoList:'Околоземные объекты',transportList:'Транспортная инфраструктура',
-      marineList:'Океаны и вода',energyList:'Энергетика',historyChart:'Историческая аналитика'
-    };
-    const titleFor=el=>{
-      const label=el.querySelector('.head .title')?.textContent?.replace(/^\s*\d+\s*\/\s*/,'').trim();
-      if(label)return label;
-      const id=el.querySelector('[id]')?.id;
-      return titles[id]||el.querySelector('.label')?.textContent?.replace(/^\s*\d+\s*\/\s*/,'').trim()||'Данные мониторинга';
-    };
-    cards.forEach((card,index)=>{
-      card.classList.add('mobile-accordion');
-      const head=card.querySelector(':scope > .head');
-      let title=titleFor(card);
-      if(card.classList.contains('metric'))title=titleFor(card);
-      if(head){
-        const titleNode=head.querySelector('.title');
-        if(titleNode)titleNode.textContent=title;
-        head.classList.add('mobile-accordion-head');
-        head.setAttribute('role','button');head.setAttribute('tabindex','0');head.setAttribute('aria-expanded','false');
-        const status=head.querySelector('.status');
-        if(status)status.classList.add('status-badge');
-        const chevron=document.createElement('span');chevron.className='accordion-chevron';chevron.textContent='⌄';head.appendChild(chevron);
-      }else{
-        const headNode=document.createElement('button');
-        headNode.type='button';headNode.className='mobile-accordion-head metric-head';
-        const label=card.querySelector('.label');
-        if(label)label.textContent=title;
-        headNode.innerHTML='<span class="accordion-icon" aria-hidden="true">◈</span><span class="metric-head-title"></span><span class="accordion-chevron">⌄</span>';
-        headNode.querySelector('.metric-head-title').textContent=title;
-        card.insertBefore(headNode,card.firstChild);
-      }
-      const accordionHead=head||card.querySelector('.mobile-accordion-head');
-      const content=document.createElement('div');content.className='mobile-accordion-content';
-      [...card.children].forEach(child=>{if(child!==accordionHead)content.appendChild(child);});
-      card.appendChild(content);
-      const toggle=()=>{
-        const expanded=card.classList.toggle('expanded');
-        accordionHead.setAttribute('aria-expanded',String(expanded));
-      };
-      accordionHead.addEventListener('click',toggle);
-      accordionHead.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
-      // Compact summary metrics remain visible in collapsed cards; detailed lists stay inside.
-      if(card.classList.contains('metric'))card.classList.add('metric-accordion');
-      card.dataset.mobileAccordion=String(index);
-    });
-
-    // No persistent bottom navigation: categories are selected from the top filter row.
-    const earthButton=toolbar?.querySelector('[data-category="earth"]');
-    if(earthButton)earthButton.click();
-    window.addEventListener('resize',()=>{if(state.map)state.map.invalidateSize({pan:false});},{passive:true});
+    // Keep the original document structure. No DOM reparenting, generated
+    // accordions, duplicate controls, or mobile-only navigation state.
+    const resizeMap=()=>{if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));};
+    window.addEventListener('resize',resizeMap,{passive:true});
+    window.addEventListener('orientationchange',resizeMap,{passive:true});
   }
   function start(){setupControls();setupMobileNavigation();initMap();document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
