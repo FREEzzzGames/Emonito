@@ -9,7 +9,7 @@ export default [{
       clearTimeout: 'readonly', setInterval: 'readonly', requestAnimationFrame: 'readonly',
       Date: 'readonly', Number: 'readonly', String: 'readonly', Math: 'readonly',
       Object: 'readonly', Array: 'readonly', Map: 'readonly', Infinity: 'readonly',
-      URL: 'readonly', Promise: 'readonly', Error: 'readonly', console: 'readonly',
+      URL: 'readonly', URLSearchParams: 'readonly', Promise: 'readonly', Error: 'readonly', console: 'readonly',
       L: 'readonly', Chart: 'readonly'
     }
   },
