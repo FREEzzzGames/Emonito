@@ -60,7 +60,7 @@
       try{const d=await fetchJson(SOURCES.weather+'?latitude='+point.latitude+'&longitude='+point.longitude+'&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&timezone=auto');const c=d.current||{};weather='Погода: '+fmt(c.temperature_2m,1)+' °C · влажность '+fmt(c.relative_humidity_2m,0)+'% · ветер '+fmt(c.wind_speed_10m,1)+' км/ч';}catch{}
       const quake=nearby&&nearby.km<500?'Ближайшее землетрясение: M '+fmt(nearby.f.properties?.mag,1)+' · '+Math.round(nearby.km)+' км · '+esc(nearby.f.properties?.place||'место неизвестно'):'В радиусе 500 км нет событий в загруженном фиде за 24 часа';
       const kp='Космическая погода: Kp '+esc($('kpValue')?.textContent||'—');
-      if(state.map&&popup.isOpen())popup.setContent('<div class="map-popup"><strong>Сводка · '+fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°</strong><p>'+esc(weather)+'</p><p>'+quake+'</p><p>'+kp+'</p><button type="button" class="popup-details" onclick="document.getElementById(\'weatherLocate\')?.click()">Обновить данные точки</button></div>');
+      if(state.map&&popup.isOpen())popup.setContent('<div class="map-popup"><strong>Сводка · '+fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°</strong><p>'+esc(weather)+'</p><p>'+quake+'</p><p>'+kp+'</p></div>');
       loadWeather();loadAir();loadMarine();loadHistory();
     });
     $('mapLocate').addEventListener('click',()=>locateUser());
