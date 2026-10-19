@@ -52,6 +52,47 @@
 <section class="panel third" data-module="earth"><div class="head"><span class="title">11 / GEOGRAPHY + HUMAN ACTIVITY</span><span class="status">REFERENCE LAYERS</span></div><ul class="list"><li class="data-row"><div class="row-main"><a class="row-title" href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer">OpenStreetMap</a><div class="row-detail">Roads, settlements, buildings and land-use tags</div></div><div class="row-value">MAP</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://earthobservatory.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Earth Observatory</a><div class="row-detail">Land cover, night lights and environmental imagery</div></div><div class="row-value">SCIENCE</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://www.worldpop.org/" target="_blank" rel="noopener noreferrer">WorldPop</a><div class="row-detail">Population estimates and gridded demographic datasets</div></div><div class="row-value">DATA</div></li></ul></section>
 <section class="panel third" data-module="history"><div class="head"><span class="title">12 / HISTORICAL ANALYTICS</span><span class="status" id="historyStatus">NOT LOADED</span></div><div class="chart-wrap"><canvas id="historyChart" aria-label="Historical weather graph"></canvas></div><div class="chart-foot" id="historySummary">Loading daily archive data…</div></section>
 <section class="panel third" data-module="space"><div class="head"><span class="title">08 / ORBITAL DATA SOURCES</span><span class="status">CATALOG</span></div><ul class="list"><li class="data-row"><div class="row-main"><a class="row-title" href="https://celestrak.org/" target="_blank" rel="noopener noreferrer">CelesTrak</a><div class="row-detail">Orbital elements and satellite catalog (positions require propagation)</div></div><div class="row-value">TLE</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://api.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Open APIs</a><div class="row-detail">Near-Earth objects and astronomical data</div></div><div class="row-value">API</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://www.n2yo.com/" target="_blank" rel="noopener noreferrer">N2YO</a><div class="row-detail">Satellite tracking service; check API access and terms</div></div><div class="row-value">SOURCE</div></li></ul></section>
+
+<section class="panel third monitor-module" data-module="maritime" id="moduleMaritime">
+  <div class="head"><span class="title">13 / MARITIME + SUBSEA NETWORKS</span><span class="status" id="maritimeStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="maritime" aria-label="О модуле морских кабелей">i</button><button type="button" data-retry="maritime">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="cables"> Кабели на карте</label></div>
+  <p class="module-description" id="maritimeMessage">Подводные магистрали и морские узлы. Сведения о судах требуют отдельного AIS-поставщика.</p>
+  <div class="module-stats"><div><span>Маршруты</span><strong id="cableCount">—</strong></div><div><span>Морские хабы</span><strong id="portCount">—</strong></div></div>
+  <ul class="list" id="maritimeList"><li class="empty">Ожидание данных кабельной карты…</li></ul>
+  <div class="module-tip" id="maritimeTip" hidden>Кабели передают международный интернет-трафик. Владельцы, длина и ёмкость отображаются только при наличии в источнике; кэш может быть устаревшим.</div>
+</section>
+<section class="panel third monitor-module" data-module="space" id="moduleSatellite">
+  <div class="head"><span class="title">14 / GOES · EARTH DISK</span><span class="status" id="satelliteStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="satellite" aria-label="О спутниковом модуле">i</button><button type="button" data-retry="satellite">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="goes"> Спутник на карте</label></div>
+  <p class="module-description" id="satelliteMessage">Спутниковая подложка и временной срез. Доступность и задержка зависят от выбранного продукта.</p>
+  <div class="module-timeline"><label for="satelliteHours">Архив: <span id="satelliteTimeLabel">−3 ч</span></label><input id="satelliteHours" type="range" min="0" max="6" value="3" step="1"><button type="button" id="satellitePlay" aria-pressed="false">▶ PLAY</button></div>
+  <div class="module-tip" id="satelliteTip" hidden>Полный диск GOES показывает облачность над своей зоной наблюдения. Это не глобальный одновременный снимок; временная метка указывает запрошенный кадр.</div>
+</section>
+<section class="panel third monitor-module" data-module="transport" id="moduleRadio">
+  <div class="head"><span class="title">15 / GLOBAL RADIO ETHER</span><span class="status" id="radioStatus">REFERENCE MODE</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="radio" aria-label="О радиомодуле">i</button><button type="button" data-retry="radio">↻ Повторить</button></div>
+  <p class="module-description" id="radioMessage">Диапазоны радиосвязи и открытые приёмники. Без доступного потока SDR реальные сигналы не отображаются.</p>
+  <label class="module-select-label" for="radioBand">Что слушают?</label><select id="radioBand" class="module-select"><option value="hf">КВ-связь · 3–30 МГц</option><option value="aviation">Гражданская авиация · 118–137 МГц</option><option value="vhf">Любительский VHF · 144–146 МГц</option><option value="uhf">UHF · 430–440 МГц</option></select>
+  <canvas id="radioWaterfall" class="radio-waterfall" height="100" aria-label="Декоративная спектрограмма без live-аудиопотока"></canvas>
+  <div class="module-links"><a href="https://pskreporter.info/pskmap.html" target="_blank" rel="noopener noreferrer">PSKReporter ↗</a><a href="http://www.websdr.org/" target="_blank" rel="noopener noreferrer">Каталог WebSDR ↗</a></div>
+  <div class="module-tip" id="radioTip" hidden>Спектрограмма здесь — визуальный индикатор интерфейса, а не измерение радиосигнала. Для live-спектра требуется подключённый SDR-поток; станции не генерируются искусственно.</div>
+</section>
+<section class="panel third monitor-module" data-module="space" id="moduleAurora">
+  <div class="head"><span class="title">16 / AURORA + SOLAR WIND</span><span class="status" id="auroraStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="aurora" aria-label="О полярных сияниях">i</button><button type="button" data-retry="aurora">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="aurora"> Слой на карте</label></div>
+  <div class="aurora-reading"><strong id="auroraLevel">—</strong><span id="auroraBadge" class="aurora-badge">ОЖИДАНИЕ ДАННЫХ</span></div>
+  <p class="module-description" id="auroraMessage">NOAA OVATION: вероятность полярного сияния. Прогноз вероятности не гарантирует видимость на земле.</p>
+  <div class="aurora-scale"><span>🟢 Kp 0–3 · Тихо</span><span>🟡 Kp 4–5 · Повышенная активность</span><span>🔴 Kp 6+ · Сильный шторм</span></div>
+  <div class="module-tip" id="auroraTip" hidden>Сияние зависит от облачности, темноты, широты и локального светового загрязнения. NOAA OVATION оценивает вероятность свечения, а Kp описывает геомагнитную активность.</div>
+</section>
+<section class="panel third monitor-module" data-module="earth" id="moduleNight">
+  <div class="head"><span class="title">17 / NIGHT EARTH · VIIRS</span><span class="status" id="nightStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="night" aria-label="О ночных огнях">i</button><button type="button" data-retry="night">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="night"> Ночной слой на карте</label></div>
+  <p class="module-description" id="nightMessage">Спутниковые наблюдения ночной освещённости. Снимки зависят от облаков, Луны и времени пролёта.</p>
+  <div class="module-segment" role="group" aria-label="Режим ночной освещённости"><button type="button" data-night-mode="normal" class="active">Стандартная ночь</button><button type="button" data-night-mode="anomaly">Сравнение / аномалии</button></div>
+  <div class="night-legend"><span><i></i> Наблюдаемое свечение</span><small id="nightModeNote">Слой наблюдений, не live-датчик отключений</small></div>
+  <div class="module-tip" id="nightTip" hidden>Сравнение изображений помогает заметить возможные изменения, но не подтверждает blackout автоматически. Облака, лунный свет, атмосфера и геометрия наблюдения влияют на яркость.</div>
+</section>
 </main>
 <div class="notice"><strong>DATA INTEGRITY:</strong> NASA GIBS imagery is satellite-derived but may be delayed; weather and air-quality layers may be modelled. OpenSky, ENTSO-E, fire-feed keys and some marine/aviation APIs have access, quota or licensing limits. Where access fails, Emonito displays unavailable status instead of fabricated data. NASA GIBS imagery attribution: NASA EOSDIS / GIBS.</div>
 <footer class="foot"><span>EMONITO / PLANET EARTH CONTROL DECK</span><span id="lastRefresh">Waiting for first data refresh</span><span>OpenStreetMap · NASA · USGS · NOAA · Open-Meteo · Copernicus · OWID</span></footer>
