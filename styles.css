@@ -367,3 +367,26 @@ body.dashboard-mode .side { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .ambient-presets button.active{border-color:var(--cyan);color:var(--cyan);background:#102126}
 @media(max-width:760px){.local-radar-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.local-radar-grid article{padding:10px}.local-radar-toolbar button{flex:1}.ambient-controls{align-items:flex-start}.ambient-controls label:first-of-type{width:100%;justify-content:space-between}.ambient-controls input[type=range]{width:min(58vw,220px)}}
 @media(prefers-reduced-motion:reduce){.ambient-presets button{transition:none}}
+
+
+/* Orbital Intercept — compact satellite tracking controls. */
+.satellite-intercept-panel{grid-column:1/-1}
+.satellite-intercept-controls,.satellite-target-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:0 13px 12px}
+.satellite-intercept-controls label,.satellite-target-row>label{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.satellite-intercept-controls select,.satellite-target-row select{min-width:150px;max-width:100%;min-height:36px;padding:6px 9px}
+.satellite-intercept-controls button,.satellite-target-row button{min-height:36px;padding:7px 10px;font-size:10px}
+.satellite-intercept-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 13px 12px}
+.satellite-intercept-grid article{min-width:0;display:flex;flex-direction:column;gap:7px;padding:11px;border:1px solid var(--line);border-radius:9px;background:#0b1012}
+.satellite-intercept-grid article>span{font-size:9px;letter-spacing:.07em;color:var(--muted)}
+.satellite-intercept-grid strong{font-size:clamp(15px,2.2vw,21px);line-height:1.25;overflow-wrap:anywhere;color:var(--cyan)}
+.satellite-intercept-grid small{font-size:10px;line-height:1.45;color:var(--muted)}
+.satellite-target-row{border-top:1px solid var(--line-soft);padding-top:12px}
+.satellite-target-row select{flex:1 1 180px;min-width:0}
+.satellite-target-row input{accent-color:var(--cyan)}
+.satellite-target-row button[aria-pressed="true"]{border-color:var(--lime);color:var(--lime)}
+.satellite-pass-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 13px 7px;color:var(--cyan);font-size:10px;letter-spacing:.07em}
+.satellite-pass-head span{color:var(--muted);letter-spacing:0;font-weight:400}
+.satellite-pass-list{padding:0 13px 8px}
+.satellite-pass-select{border:0;background:none;padding:0;min-height:0;color:var(--cyan);font:inherit;text-align:left;cursor:pointer}
+.satellite-pass-select:hover{text-decoration:underline}
+@media(max-width:760px){.satellite-intercept-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 10px 10px}.satellite-intercept-controls,.satellite-target-row{padding-right:10px;padding-left:10px}.satellite-intercept-controls select{flex:1 1 100%;width:100%}.satellite-intercept-controls button{flex:1 1 auto}.satellite-target-row>label{min-height:34px}.satellite-target-row select{flex-basis:100%;width:100%}.satellite-pass-head{padding-right:10px;padding-left:10px}.satellite-pass-list{padding-right:10px;padding-left:10px}}
