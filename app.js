@@ -248,6 +248,37 @@ import { setupMobileCollapsibles } from './ui.js';
       if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
     });
 
+    const metricTargets={
+      quakeCount:'#quakeList',
+      eventCount:'#eventList',
+      kpValue:'#solarList',
+      issLat:'#issList',
+      weatherTemp:'#weatherStatus',
+      airAQI:'#airStatus'
+    };
+    document.querySelectorAll('.metric').forEach(card=>{
+      const value=card.querySelector('.value');
+      const targetSelector=value&&metricTargets[value.id];
+      if(!targetSelector)return;
+      card.tabIndex=0;
+      card.setAttribute('role','link');
+      card.setAttribute('aria-label',(card.querySelector('.label')?.textContent||'Показатель')+' — открыть подробности');
+      const openDetails=()=>{
+        const target=document.querySelector(targetSelector);
+        const panel=target?.closest('.panel');
+        if(panel?.classList.contains('panel--collapsed')){
+          panel.classList.remove('panel--collapsed');
+          const toggle=panel.querySelector('.panel__toggle');
+          if(toggle){toggle.textContent='−';toggle.setAttribute('aria-expanded','true');toggle.setAttribute('aria-label','Свернуть панель');}
+        }
+        target?.scrollIntoView({block:'start',behavior:prefersReduced()?'auto':'smooth'});
+      };
+      card.addEventListener('click',openDetails);
+      card.addEventListener('keydown',event=>{
+        if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetails();}
+      });
+    });
+
     let rafPending=false;
     function updateMapFab(){
       if(!mapFab||document.body.classList.contains('map-fullscreen'))return;
