@@ -410,3 +410,164 @@ body.dashboard-mode .map-panel{display:block}
 @media(prefers-reduced-motion:reduce){.category-screen-item{animation:none}}
 
 .category-screen-hidden{display:none!important}
+
+
+/* Viewport-fit density: keep the map and selected category inside the first screen where practical. */
+:root{--ui-gap:8px}
+.shell{padding:8px 12px 12px}
+.top{gap:10px;padding:4px 2px 8px}
+.mark{width:28px;height:28px;flex-basis:28px}
+h1{font-size:clamp(16px,1.6vw,21px)}
+.top-right{gap:4px 10px;font-size:10px}
+#refreshAll{min-height:30px;padding:5px 9px}
+.category-intro{padding:7px 0;gap:10px}
+.category-intro h2{margin:2px 0;font-size:clamp(16px,1.8vw,22px)}
+.category-intro p,.category-intro .eyebrow{display:none}
+.toolbar{gap:5px}
+.toolbar button{min-width:0;min-height:32px;padding:5px 8px;font-size:10px}
+.grid{gap:var(--ui-gap)}
+.grid>.side{gap:var(--ui-gap)}
+.panel{border-radius:9px}
+.panel .head{gap:6px;padding:8px 10px}
+.map-panel>.head{align-items:center}
+.map-head-tools{gap:6px}
+.map-head-tools select,.map-mode-controls button{min-height:30px;padding:4px 7px;font-size:10px}
+.map-wrap{min-height:0}
+.map{height:clamp(170px,27vh,300px);min-height:0}
+.map-note{gap:5px;padding:5px 8px;font-size:9px}
+.map-note button{min-height:26px;padding:3px 6px}
+.map-tools-row{gap:6px;padding:6px 8px}
+#layerMenuToggle,.timeline-control select{min-height:29px;padding:4px 7px;font-size:10px}
+.layer-menu{gap:5px}
+.layer-menu label{min-height:27px;padding:3px 6px;font-size:9px}
+.metric{min-height:76px;padding:8px}
+.metric .label{font-size:9px}
+.value{margin-top:4px;font-size:clamp(18px,1.8vw,26px)}
+.detail{margin-top:2px;font-size:9px;line-height:1.25}
+.data-row{gap:8px;padding:7px 9px}
+.row-title{font-size:11px;line-height:1.25}
+.row-detail{margin-top:2px;font-size:9px;line-height:1.3}
+.row-value{font-size:10px}
+.empty{padding:8px 10px;font-size:10px}
+.chart-wrap{height:130px;padding:7px}
+.chart-foot{padding:5px 9px;font-size:9px}
+.module-description{min-height:0;padding:0 10px 7px;font-size:9px;line-height:1.3}
+.module-toolbar{gap:5px;padding:0 9px 7px}
+.module-toolbar button{min-height:27px;padding:4px 7px;font-size:9px}
+.module-info{width:27px;min-width:27px;height:27px;min-height:27px}
+.module-stats{gap:5px;padding:0 9px 7px}
+.module-stats>div{gap:2px;padding:6px}
+.module-stats span,.module-select-label,.module-links{font-size:9px}
+.module-stats strong{font-size:16px}
+.module-tip,.module-timeline,.aurora-scale,.night-legend{margin:0 9px 8px;padding:6px;font-size:9px;line-height:1.3}
+.module-timeline,.aurora-reading,.module-segment{padding-right:9px;padding-left:9px}
+.radio-waterfall{height:48px;margin:0 9px 7px}
+.aurora-reading{padding-bottom:6px}
+.aurora-reading>strong{font-size:18px}
+.planet-explorer-toggle{margin-bottom:7px;padding:6px 9px}
+.local-radar-grid,.satellite-intercept-grid{gap:6px}
+.local-radar-grid article,.satellite-intercept-grid article{gap:4px;padding:7px}
+.local-radar-toolbar,.ambient-controls,.ambient-presets{gap:5px;margin:6px 0}
+.local-radar-toolbar button,.ambient-controls button,.ambient-presets button{min-height:29px;padding:5px 7px;font-size:9px}
+.local-radar-note{margin:6px 10px;font-size:9px;line-height:1.3}
+.satellite-intercept-controls,.satellite-target-row{gap:5px;padding:0 9px 7px}
+.satellite-intercept-controls button,.satellite-target-row button,.satellite-intercept-controls select,.satellite-target-row select{min-height:29px;padding:4px 7px;font-size:9px}
+.satellite-intercept-grid{padding:0 9px 7px}
+.satellite-intercept-grid article>span{font-size:8px}
+.satellite-intercept-grid strong{font-size:clamp(12px,1.4vw,17px)}
+.satellite-intercept-grid small{font-size:9px}
+.satellite-pass-head{padding:0 9px 5px;font-size:9px}
+.satellite-pass-list{padding:0 9px 5px}
+.notice,.foot{display:none}
+.category-screen-item{animation:none}
+@media(min-width:761px){
+  .grid>.panel[data-module],.shell>.panel[data-module]{height:auto}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid>.side{grid-column:1/-1;grid-template-columns:repeat(6,minmax(0,1fr))}
+  .grid>.panel[data-module]{grid-column:span 1}
+  .grid>.panel[data-module] .list{max-height:120px;overflow:auto}
+  .map{height:clamp(220px,32vh,360px)}
+  .local-radar-panel,.satellite-intercept-panel,.ambient-panel{grid-column:1/-1}
+}
+@media(max-width:760px){
+  .shell{padding:5px 6px calc(55px + env(safe-area-inset-bottom))}
+  .top{align-items:center;padding:3px 1px 6px}
+  .brand{gap:7px}
+  .mark{width:23px;height:23px;flex-basis:23px}
+  .mark::before,.mark::after{inset:5px 7px}
+  h1{font-size:15px;letter-spacing:.08em}
+  .sub{font-size:7px;max-width:none}
+  .top-right{gap:3px 5px;font-size:8px}
+  .top-right>span:first-child{display:none}
+  #clock{font-size:8px}
+  #refreshAll{width:29px;min-width:29px;height:29px;min-height:29px;padding:0}
+  #refreshAll::after{font-size:16px}
+  .category-intro{padding:5px 0}
+  .toolbar{position:static;z-index:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:0;border:0;background:transparent}
+  .toolbar button{min-height:30px;padding:4px 1px;font-size:clamp(8px,2.3vw,10px);border-radius:5px}
+  .map-panel>.head{padding:6px 7px;gap:5px}
+  .map-head-tools{width:auto;display:flex;flex:1 1 120px}
+  .map-head-tools select{min-height:27px;padding:3px 5px;font-size:9px}
+  #mapStatus{display:none}
+  .map-mode-controls{width:auto;display:flex;gap:3px}
+  .map-mode-controls button{min-height:27px;padding:3px 5px;font-size:8px}
+  .map{height:clamp(145px,23vh,210px);min-height:0}
+  .map-note{padding:4px 6px;font-size:8px}
+  .map-note>div:nth-child(2){display:none}
+  .map-note button{min-height:24px;font-size:8px}
+  .map-tools-row{padding:4px 6px;gap:4px}
+  #layerMenuToggle,.timeline-control select{min-height:26px;font-size:9px}
+  .timeline-control{font-size:9px}
+  .layer-menu{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+  .layer-menu label{min-height:25px;padding:3px;font-size:8px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .grid>.side{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+  .grid>.panel[data-module]{grid-column:span 1}
+  .grid>.panel[data-module] .head{min-height:34px;padding:5px 6px}
+  .grid>.panel[data-module] .title{font-size:9px;line-height:1.2}
+  .grid>.panel[data-module] .status{font-size:8px}
+  .grid>.panel[data-module] .list{max-height:64px;overflow:auto}
+  .metric{min-height:64px;padding:6px}
+  .metric .label{font-size:8px;line-height:1.2}
+  .value{font-size:18px}
+  .detail{font-size:8px}
+  .panel .head{padding:6px}
+  .data-row{padding:5px 6px}
+  .row-title{font-size:9px}
+  .row-detail{font-size:8px}
+  .module-description{display:none}
+  .module-toolbar{padding:0 6px 5px;gap:3px}
+  .module-toolbar button{min-height:24px;padding:3px 5px;font-size:8px}
+  .module-switch{font-size:8px;min-height:24px}
+  .module-stats{padding:0 6px 5px;gap:4px}
+  .module-stats>div{padding:5px}
+  .module-stats strong{font-size:14px}
+  .module-tip{display:none!important}
+  .module-timeline{padding:0 6px 5px;gap:4px}
+  .module-timeline button{min-height:24px}
+  .radio-waterfall{height:34px;margin:0 6px 5px}
+  .module-links{gap:7px;padding:0 6px 6px;font-size:8px}
+  .aurora-scale{display:none}
+  .night-legend{padding:0 6px 6px}
+  .planet-explorer-toggle{padding:5px 7px;margin-bottom:5px}
+  .planet-explorer-toggle strong{font-size:9px}
+  .planet-explorer-toggle span{display:none}
+  .planet-explorer-toggle button{min-height:27px;font-size:9px}
+  .local-radar-grid,.satellite-intercept-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .local-radar-grid article,.satellite-intercept-grid article{padding:5px}
+  .local-radar-label,.satellite-intercept-grid article>span{font-size:7px}
+  .local-radar-grid strong,.satellite-intercept-grid strong{font-size:12px}
+  .local-radar-grid small,.satellite-intercept-grid small{font-size:8px}
+  .local-radar-toolbar button,.ambient-controls button,.ambient-presets button{min-height:25px;padding:4px 5px;font-size:8px}
+  .satellite-intercept-controls,.satellite-target-row{gap:4px;padding:0 6px 5px}
+  .satellite-intercept-controls label,.satellite-target-row>label{font-size:8px}
+  .satellite-intercept-controls button,.satellite-target-row button,.satellite-intercept-controls select,.satellite-target-row select{min-height:25px;padding:3px 5px;font-size:8px}
+  .satellite-pass-list{max-height:70px;overflow:auto}
+  .help-tour{bottom:calc(57px + env(safe-area-inset-bottom));right:6px;width:28px;height:28px;min-height:28px;padding:0}
+  .help-tour span{display:none}
+}
+@media(max-height:740px) and (max-width:760px){
+  .map{height:19vh;min-height:120px}
+  .grid>.panel[data-module] .list{max-height:48px}
+  .shell{padding-top:3px}
+}
