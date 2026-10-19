@@ -661,3 +661,6 @@ body.emo-ambient-mode .map-tools-row > :not(.emo-tools){display:none!important}
 .earth-watch-panel #infraSources .row-detail{display:none}
 .earth-watch-panel #infraSources .row-title{cursor:help}
 .emo-tools button[aria-pressed=true]{border-color:var(--lime);color:var(--lime)}
+
+.emo-toast{position:fixed;z-index:3000;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(560px,calc(100% - 24px));padding:12px 14px;border:1px solid var(--danger);border-radius:9px;background:rgba(20,12,13,.97);color:#ffd8d6;box-shadow:0 8px 28px #0009;font-size:12px}
+@media(max-width:760px){.emo-toast{bottom:calc(12px + env(safe-area-inset-bottom));font-size:11px}}
