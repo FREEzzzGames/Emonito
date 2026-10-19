@@ -110,7 +110,7 @@ export function initEnhancements({ state }) {
     });
   }
   function addFavorite(point = selected) {
-    if (!point) { $('emoPointStatus').textContent = 'Сначала выберите точку на карте.'; return; }
+    if (!point) { $('emoInspector').hidden = false; $('emoPointStatus').textContent = 'Сначала выберите точку на карте.'; return; }
     if (favorites.some(f => Math.abs(f.latitude - point.latitude) < .001 && Math.abs(f.longitude - point.longitude) < .001)) { $('emoPointStatus').textContent = 'Эта точка уже сохранена.'; return; }
     const name = window.prompt('Название точки (необязательно)', point.latitude.toFixed(3) + ', ' + point.longitude.toFixed(3));
     if (name === null) return;
