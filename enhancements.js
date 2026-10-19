@@ -280,7 +280,7 @@ export function initEnhancements({ state }) {
     const now = Date.now();
     const entries = [...freshness.entries()].filter(([id]) => $(id)).map(([id, at]) => ({ id, age: Math.max(0, Math.floor((now-at)/1000)), status: $(id).textContent.trim() }));
     const recent = entries.filter(e => e.status && !/загруз|loading|init/i.test(e.status)).sort((a,b)=>a.age-b.age)[0];
-    $('emoFreshness').textContent = recent ? 'СТАТУС ОБНОВЛЁН ' + recent.age + 'с · ' + recent.id : 'ОЖИДАНИЕ ДАННЫХ';
+    $('emoFreshness').textContent = recent ? 'СТАТУС UI ИЗМЕНЁН ' + recent.age + 'с · ' + recent.id : 'ОЖИДАНИЕ СТАТУСА';
     $('emoFreshness').title = entries.map(e => e.id + ': ' + (e.status || '—') + ' (' + e.age + 'с)').join('\n');
   }
   updateFreshness(); window.setInterval(updateFreshness, 5000);
