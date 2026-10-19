@@ -140,7 +140,7 @@ export function initEarthWatch({ state }) {
     checks.forEach(item => {
       const li = document.createElement('li'); li.className = 'data-row';
       const left = document.createElement('div'); left.className = 'row-main';
-      const title = document.createElement('a'); title.className = 'row-title'; title.textContent = item.name; title.href = item.url; title.target = '_blank'; title.rel = 'noopener noreferrer';
+      const title = document.createElement('a'); title.className = 'row-title'; title.textContent = item.name; title.title = item.detail; title.href = item.url; title.target = '_blank'; title.rel = 'noopener noreferrer';
       const detail = document.createElement('div'); detail.className = 'row-detail'; detail.textContent = item.detail;
       left.append(title, detail); li.append(left); list.append(li);
     });
@@ -175,7 +175,7 @@ export function initEarthWatch({ state }) {
         const detailText = [p.sender || p.provider || '', p.startDate || p.start || p.effective || '', p.areaDesc || p.area || ''].filter(Boolean).join(' · ');
         const li = document.createElement('li'); li.className = 'data-row';
         const left = document.createElement('div'); left.className = 'row-main';
-        const title = document.createElement('div'); title.className = 'row-title'; title.textContent = titleText;
+        const title = document.createElement('div'); title.className = 'row-title'; title.textContent = titleText; title.title = detailText || 'Официальное предупреждение';
         const detail = document.createElement('div'); detail.className = 'row-detail'; detail.textContent = detailText || 'Подробности доступны в официальной карточке предупреждения.';
         left.append(title, detail); li.append(left);
         const link = p.url || p.link || p.web || p.details;
