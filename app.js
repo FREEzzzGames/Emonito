@@ -50,10 +50,9 @@
     const satellite=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_CorrectedReflectance_TrueColor',format:'image/jpeg',transparent:false,version:'1.1.1',time:new Date(Date.now()-86400000).toISOString().slice(0,10),attribution:'NASA GIBS / EOSDIS',tileSize:256});
     const clouds=L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'MODIS_Terra_Cloud_Top_Temp_Day',format:'image/png',transparent:true,version:'1.1.1',attribution:'NASA GIBS'});
     base.on('tileload',()=>{$status('mapStatus','STREET MAP OK','ok');});base.on('tileerror',()=>{$status('mapStatus','TILE ERROR · CHECK NETWORK','error');});satellite.on('tileload',()=>{$status('mapStatus','NASA IMAGERY LOADED','ok');});satellite.on('tileerror',()=>{$status('mapStatus','NASA IMAGERY UNAVAILABLE','error');});clouds.on('tileerror',()=>{$status('mapStatus','CLOUD LAYER UNAVAILABLE','error');});state.map=map;state.layers={base,satellite,clouds,quakes:L.layerGroup().addTo(map),events:L.layerGroup().addTo(map),iss:L.layerGroup().addTo(map),issTrail:L.layerGroup().addTo(map),air:L.layerGroup(),transport:L.layerGroup(),aircraft:L.layerGroup(),energy:L.layerGroup()};
-    L.control.layers({'Street map':base,'NASA satellite imagery':satellite},{'Cloud-top temperature':clouds,'Earthquakes':state.layers.quakes,'Natural events':state.layers.events,'ISS position':state.layers.iss,'ISS sampled trail':state.layers.issTrail,'Transport data':state.layers.transport,'Aircraft (OpenSky)':state.layers.aircraft,'Energy infrastructure':state.layers.energy},{collapsed:true,position:'topright'}).addTo(map);
     map.on('click',async e=>{
       const point={latitude:e.latlng.lat,longitude:e.latlng.lng};state.location=point;
-      text('selectedCoords',fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°');
+      text('selectedCoords',fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°');text('mobileSelectedCoords',fmt(point.latitude,3)+'°, '+fmt(point.longitude,3)+'°');
       const popup=L.popup({maxWidth:280}).setLatLng(e.latlng).setContent('<div class="map-popup"><strong>Сводка по точке</strong><p>Загружаем погоду…</p><p>Сейсмика: поиск ближайших событий…</p><p>Космическая погода: '+esc($('kpValue')?.textContent||'—')+' Kp</p></div>').openOn(map);
       const nearby=(state.quakeFeatures||[]).map(f=>{const c=f.geometry?.coordinates||[];if(c.length<2)return null;const dlat=(c[1]-point.latitude)*Math.PI/180,dlon=(c[0]-point.longitude)*Math.PI/180;const a=Math.sin(dlat/2)**2+Math.cos(point.latitude*Math.PI/180)*Math.cos(c[1]*Math.PI/180)*Math.sin(dlon/2)**2;return {f,km:6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))};}).filter(Boolean).sort((a,b)=>a.km-b.km)[0];
       let weather='Погода: данные недоступны';
@@ -64,7 +63,7 @@
       loadWeather();loadAir();loadMarine();loadHistory();
     });
     $('mapLocate').addEventListener('click',()=>locateUser());
-    $('mapReset').addEventListener('click',()=>map.setView([20,0],2));
+    $('mapReset').addEventListener('click',()=>{state.location=null;map.setView([20,0],2);text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');loadWeather();loadAir();loadMarine();loadHistory();});
     $status('mapStatus','MAP READY','ok');
   }
   function popupLink(title,detail,href){return '<strong>'+esc(title)+'</strong><br>'+esc(detail)+(href?'<br><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'');}
@@ -97,7 +96,7 @@
   async function loadWeather(){
     const loc=state.location||{latitude:48.89,longitude:8.70};$status('weatherStatus','LOADING');
     const url=SOURCES.weather+'?latitude='+loc.latitude+'&longitude='+loc.longitude+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=temperature_2m,precipitation,wind_speed_10m&past_days=7&forecast_days=3&timezone=auto';
-    try{const d=await fetchJson(url);const c=d.current;if(!c)throw new Error('No current conditions');text('weatherTemp',fmt(c.temperature_2m,1)+'°C');text('weatherFeels',fmt(c.apparent_temperature,1)+'°C feels like');text('weatherWind',fmt(c.wind_speed_10m,1)+' km/h');text('weatherPressure',fmt(c.surface_pressure,0)+' hPa');text('weatherHumidity',fmt(c.relative_humidity_2m,0)+'%');text('weatherRain',fmt(c.precipitation,1)+' mm');text('weatherUpdated',dateTime(c.time));text('selectedCoords',fmt(loc.latitude,3)+'°, '+fmt(loc.longitude,3)+'°');drawHistory(d.hourly);$status('weatherStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');}
+    try{const d=await fetchJson(url);const c=d.current;if(!c)throw new Error('No current conditions');text('weatherTemp',fmt(c.temperature_2m,1)+'°C');text('weatherFeels',fmt(c.apparent_temperature,1)+'°C feels like');text('weatherWind',fmt(c.wind_speed_10m,1)+' km/h');text('weatherPressure',fmt(c.surface_pressure,0)+' hPa');text('weatherHumidity',fmt(c.relative_humidity_2m,0)+'%');text('weatherRain',fmt(c.precipitation,1)+' mm');text('weatherUpdated',dateTime(c.time));text('selectedCoords',fmt(loc.latitude,3)+'°, '+fmt(loc.longitude,3)+'°');text('mobileSelectedCoords',fmt(loc.latitude,3)+'°, '+fmt(loc.longitude,3)+'°');drawHistory(d.hourly);$status('weatherStatus','LIVE · '+new Date().toLocaleTimeString(),'ok');}
     catch(e){$status('weatherStatus','UNAVAILABLE','error');['weatherTemp','weatherFeels','weatherWind','weatherPressure','weatherHumidity','weatherRain'].forEach(id=>text(id,'—'));text('weatherUpdated','Source unavailable: '+e.message);}
   }
   async function loadAir(){
@@ -137,9 +136,20 @@
     try{const b=state.map.getBounds();const url=SOURCES.openSky+'?lamin='+Math.max(-85,b.getSouth())+'&lomin='+Math.max(-180,b.getWest())+'&lamax='+Math.min(85,b.getNorth())+'&lomax='+Math.min(180,b.getEast());const d=await fetchJson(url,16000);const states=d.states||[];text('aircraftCount',states.length);const group=state.layers.aircraft;if(group){group.clearLayers();states.forEach(a=>{const lon=a[5],lat=a[6];if(!Number.isFinite(lat)||!Number.isFinite(lon)||a[8])return;const label=String(a[1]||a[0]||'Aircraft').trim();L.circleMarker([lat,lon],{radius:3,color:'#d9ff45',fillColor:'#d9ff45',fillOpacity:.85,weight:1}).bindPopup(popupLink(label,'Altitude '+(Number.isFinite(a[7])?fmt(a[7]/1000,1)+' km':'—')+' · speed '+(Number.isFinite(a[9])?fmt(a[9],0)+' m/s':'—'),'https://opensky-network.org/')).addTo(group);});}setList('aircraftList',states.slice(0,8).map(a=>makeRow(String(a[1]||a[0]||'Aircraft').trim(),(a[2]||'Origin unavailable')+' · '+(Number.isFinite(a[6])?fmt(a[6],2)+', '+fmt(a[5],2):'Position unavailable'),Number.isFinite(a[7])?fmt(a[7]/1000,1)+' km':'—','https://opensky-network.org/')),'No aircraft states returned for this view.');$status('aircraftStatus','LIVE · OPENSKY','ok');}
     catch(e){text('aircraftCount','—');$status('aircraftStatus','UNAVAILABLE / RESTRICTED','error');setList('aircraftList',[],'OpenSky API is unavailable, CORS-blocked, or requires authenticated access.');}
   }
+  function parseCSVLine(line){
+    const cells=[];let value='',quoted=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'&&quoted&&line[i+1]==='"'){value+='"';i++;}
+      else if(ch==='"')quoted=!quoted;
+      else if(ch===','&&!quoted){cells.push(value);value='';}
+      else value+=ch;
+    }
+    cells.push(value);return cells;
+  }
   async function loadEnergy(){
     $status('energyStatus','LOADING');
-    try{const d=await fetch('https://ourworldindata.org/grapher/electricity-prod-source-stacked.csv?tab=chart&time=latest&csvType=full&useColumnShortNames=true');if(!d.ok)throw new Error('HTTP '+d.status);const csv=await d.text();const lines=csv.trim().split(/\r?\n/);const header=lines[0].split(',');const countryIndex=header.indexOf('Entity');const yearIndex=header.indexOf('Year');const rows=lines.slice(1).filter(line=>line.split(',')[countryIndex]==='Germany').slice(-5);setList('energyList',rows.map(line=>{const cells=line.split(',');return makeRow('Germany electricity production', 'Year '+(cells[yearIndex]||'—')+' · Our World in Data',cells.slice(2).filter(v=>v&&v!=='').slice(0,3).join(' / '))}),'Historical electricity dataset returned no rows.');text('energyCount','Historical');$status('energyStatus','HISTORICAL · OWID','ok');}
+    try{const d=await fetch('https://ourworldindata.org/grapher/electricity-prod-source-stacked.csv?tab=chart&time=latest&csvType=full&useColumnShortNames=true');if(!d.ok)throw new Error('HTTP '+d.status);const csv=await d.text();const lines=csv.trim().split(/\r?\n/);const header=parseCSVLine(lines[0]);const countryIndex=header.indexOf('Entity');const yearIndex=header.indexOf('Year');const rows=lines.slice(1).map(parseCSVLine).filter(cells=>cells[countryIndex]==='Germany').sort((a,b)=>Number(b[yearIndex])-Number(a[yearIndex])).slice(0,5);setList('energyList',rows.map(cells=>makeRow('Germany electricity production','Year '+(cells[yearIndex]||'—')+' · Our World in Data',cells.slice(2).filter(v=>v!==undefined&&v!=='').slice(0,3).join(' / '))),'Historical electricity dataset returned no rows.');text('energyCount','Historical');$status('energyStatus','HISTORICAL · OWID','ok');}
     catch(e){text('energyCount','—');$status('energyStatus','UNAVAILABLE','error');setList('energyList',[],'Energy dataset unavailable. ENTSO-E near-real-time data needs a registered API token.');}
   }
   async function loadHistory(){
@@ -153,7 +163,7 @@
   }
   function drawHistoricalChart(labels,temps,rain){
     if(!window.Chart)return;const ctx=$('historyChart');if(!ctx)return;if(state.historyChart)state.historyChart.destroy();state.historyChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Daily mean temperature °C',data:temps,borderColor:'#d9ff45',pointRadius:1,tension:.2,yAxisID:'y'},{label:'Precipitation mm',data:rain,borderColor:'#60d9ff',pointRadius:1,tension:.2,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#b8c0c4',boxWidth:10,font:{family:'monospace',size:10}}}},scales:{x:{ticks:{color:'#858d92',maxTicksLimit:8},grid:{color:'#22272a'}},y:{position:'left',ticks:{color:'#d9ff45'},grid:{color:'#22272a'}},y1:{position:'right',ticks:{color:'#60d9ff'},grid:{drawOnChartArea:false}}}}});}
-  function locateUser(){if(!navigator.geolocation){text('weatherUpdated','Geolocation not supported');return;}text('weatherUpdated','Requesting location permission…');navigator.geolocation.getCurrentPosition(p=>{state.location={latitude:p.coords.latitude,longitude:p.coords.longitude};state.map?.setView([p.coords.latitude,p.coords.longitude],7);loadWeather();loadAir();loadMarine();loadHistory();},e=>text('weatherUpdated',e.code===1?'Location permission denied':'Could not determine location'),{enableHighAccuracy:false,timeout:10000,maximumAge:300000});}
+  function locateUser(){if(!navigator.geolocation){text('weatherUpdated','Geolocation not supported');return;}text('weatherUpdated','Requesting location permission…');navigator.geolocation.getCurrentPosition(p=>{state.location={latitude:p.coords.latitude,longitude:p.coords.longitude};state.map?.setView([p.coords.latitude,p.coords.longitude],7);text('selectedCoords',fmt(p.coords.latitude,3)+'°, '+fmt(p.coords.longitude,3)+'°');text('mobileSelectedCoords',fmt(p.coords.latitude,3)+'°, '+fmt(p.coords.longitude,3)+'°');loadWeather();loadAir();loadMarine();loadHistory();},e=>text('weatherUpdated',e.code===1?'Location permission denied':'Could not determine location'),{enableHighAccuracy:false,timeout:10000,maximumAge:300000});}
   function setClock(){text('clock','UTC '+new Date().toISOString().slice(11,19));}
   function setupControls(){
     $('refreshAll')?.addEventListener('click',refreshAll);
@@ -172,7 +182,7 @@
       state.selectedCategory=category;
       if(state.map)setTimeout(()=>state.map.invalidateSize({pan:false}),80);
     }
-    document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>applyCategory(btn.dataset.category)));
+    document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{applyCategory(btn.dataset.category);if(window.matchMedia('(max-width: 760px)').matches)btn.scrollIntoView({block:'nearest',inline:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
     $('imageryMode')?.addEventListener('change',e=>{if(!state.map)return;state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);});
     $('mapRefreshTransport')?.addEventListener('click',()=>{zoomToTransport();});
     $('layerMenuToggle')?.addEventListener('click',()=>{const menu=$('layerMenu'),button=$('layerMenuToggle');if(!menu)return;menu.hidden=!menu.hidden;button.setAttribute('aria-expanded',String(!menu.hidden));});
@@ -204,7 +214,7 @@
       let actions=status.parentElement?.querySelector(':scope > .status-actions');
       if(!needsRetry){actions?.remove();return;}
       if(!actions){actions=document.createElement('span');actions.className='status-actions';status.insertAdjacentElement('afterend',actions);}
-      if(!actions.querySelector('.status-info')){const info=document.createElement('button');info.type='button';info.className='status-info';info.textContent='ⓘ';info.title='Источник временно недоступен или требует более крупного масштаба. Повторите запрос позже либо приблизьте карту.';info.setAttribute('aria-label',info.title);actions.append(info);}
+      if(!actions.querySelector('.status-info')){const info=document.createElement('button');info.type='button';info.className='status-info';info.textContent='ⓘ';info.title='Пояснение о статусе источника';info.setAttribute('aria-label',info.title);info.setAttribute('aria-expanded','false');info.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();let note=actions.querySelector('.status-explanation');if(note){note.remove();info.setAttribute('aria-expanded','false');return;}note=document.createElement('span');note.className='status-explanation';note.textContent=/ZOOM TO LEVEL/i.test(status.textContent)?'Для этого слоя нужен региональный масштаб. Нажмите «Приблизить», чтобы перейти к уровню 5.':'Источник не ответил или ограничил доступ. Проверьте соединение и повторите запрос.';actions.append(note);info.setAttribute('aria-expanded','true');});actions.append(info);}
       if(!actions.querySelector('.status-retry')){const retry=document.createElement('button');retry.type='button';retry.className='status-retry';retry.textContent=/ZOOM TO LEVEL/i.test(text)?'Приблизить':'Повторить';retry.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();handler();});actions.append(retry);}
     };
     document.querySelectorAll('.status[id]').forEach(enhance);
@@ -292,6 +302,6 @@
     if(earthButton)earthButton.click();
     window.addEventListener('resize',()=>{if(state.map)state.map.invalidateSize({pan:false});},{passive:true});
   }
-  function start(){setupControls();setupMobileNavigation();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
+  function start(){setupControls();setupMobileNavigation();initMap();document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
