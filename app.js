@@ -1,7 +1,7 @@
 /* EMONITO — open-data monitoring dashboard. No secrets are embedded. */
 import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
 import { createApi } from './api.js?v=api-rewrite-1';
-import { initMap as initializeMap } from './map.js?v=solar-terminator-1';
+import { initMap as initializeMap } from './map.js?v=leaflet-fallback-2';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
 import { initMonitoringModules } from './modules.js?v=modules-1';
 import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
