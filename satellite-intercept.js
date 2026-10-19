@@ -29,11 +29,11 @@ export function initSatelliteIntercept({ state, $status }) {
   if (!ui.category || !ui.target) return;
 
   const groups = {
-    stations: { label: 'Станции и пилотируемые', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json' },
-    starlink: { label: 'Starlink', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=json' },
-    weather: { label: 'Погодные / NOAA', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=json' },
-    resource: { label: 'Дистанционное зондирование', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=resource&FORMAT=json' },
-    visual: { label: 'Яркие спутники', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=json' }
+    stations: { label: 'Станции и пилотируемые', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle' },
+    starlink: { label: 'Starlink', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle' },
+    weather: { label: 'Погодные / NOAA', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=tle' },
+    resource: { label: 'Дистанционное зондирование', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=resource&FORMAT=tle' },
+    visual: { label: 'Яркие спутники', url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle' }
   };
   const EARTH_RADIUS_KM = 6371;
   let satelliteLib = null;
@@ -132,7 +132,7 @@ export function initSatelliteIntercept({ state, $status }) {
     }
     const look = lookAtObserver(pos, now);
     const elevation = look && Number.isFinite(look.elevation) ? look.elevation * 180 / Math.PI : NaN;
-    const rangeKm = look && Number.isFinite(look.range) ? look.range / 1000 : NaN;
+    const rangeKm = look && Number.isFinite(look.range) ? look.range : NaN;
     if (ui.name) ui.name.textContent = selected.OBJECT_NAME || 'Satellite';
     if (ui.position) ui.position.textContent = fmt(pos.latitude, 2) + '°, ' + fmt(pos.longitude, 2) + '°';
     if (ui.altitude) ui.altitude.textContent = fmt(pos.altitude, 0) + ' km';
@@ -236,14 +236,33 @@ export function initSatelliteIntercept({ state, $status }) {
       const key = ui.category.value in groups ? ui.category.value : 'stations';
       const response = await fetch(groups[key].url, { cache: 'no-cache' });
       if (!response.ok) throw new Error('CelesTrak HTTP ' + response.status);
-      const rows = await response.json();
-      if (!Array.isArray(rows)) throw new Error('Неожиданный формат GP-данных');
-      catalog = rows.map((row) => {
-        const line1 = row.TLE_LINE1 || row.TLE_LINE1;
-        const line2 = row.TLE_LINE2 || row.TLE_LINE2;
-        if (!line1 || !line2 || !row.NORAD_CAT_ID) return null;
-        try { return { ...row, satrec: satelliteLib.twoline2satrec(line1, line2) }; } catch { return null; }
-      }).filter((sat) => sat && sat.satrec);
+      const tleText = await response.text();
+      const lines = tleText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      catalog = [];
+      for (let index = 0; index < lines.length - 2; index += 1) {
+        const name = lines[index];
+        const line1 = lines[index + 1];
+        const line2 = lines[index + 2];
+        if (!line1.startsWith('1 ') || !line2.startsWith('2 ')) continue;
+        const noradId = line1.slice(2, 7).trim();
+        if (!noradId) continue;
+        const epochField = line1.slice(18, 32).trim();
+        const epochYear = Number(epochField.slice(0, 2));
+        const epochDay = Number(epochField.slice(2));
+        const fullYear = epochYear < 57 ? 2000 + epochYear : 1900 + epochYear;
+        const epoch = Number.isFinite(epochDay)
+          ? new Date(Date.UTC(fullYear, 0, 1) + (epochDay - 1) * 86400000).toISOString()
+          : '';
+        try {
+          catalog.push({
+            OBJECT_NAME: name,
+            NORAD_CAT_ID: noradId,
+            EPOCH: epoch,
+            satrec: satelliteLib.twoline2satrec(line1, line2)
+          });
+        } catch { /* Skip malformed elements without blocking the catalog. */ }
+        index += 2;
+      }
       if (!catalog.length) throw new Error('В источнике нет пригодных орбитальных элементов');
       ui.target.replaceChildren();
       catalog.slice(0, 800).forEach((sat) => {
