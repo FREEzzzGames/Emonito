@@ -1,8 +1,8 @@
 /* EMONITO — open-data monitoring dashboard. No secrets are embedded. */
 import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
-import { createApi } from './api.js';
-import { initMap as initializeMap } from './map.js';
-import { setupMobileCollapsibles } from './ui.js';
+import { createApi } from './api.js?v=api-rewrite-1';
+import { initMap as initializeMap } from './map.js?v=map-rewrite-1';
+import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
 (() => {
   const $ = id => document.getElementById(id);
   const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
