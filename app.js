@@ -248,7 +248,7 @@
 
     // Persistent category shortcuts. The main map and location summary always remain visible.
     const nav=document.createElement('nav');nav.id='mobileNav';nav.className='mobile-nav';nav.setAttribute('aria-label','Главные разделы');
-    const items=[['all','▦','Все'],['earth','◎','Земля'],['weather','☁','Погода'],['space','◉','Космос'],['transport','✈','Транспорт'],['energy','ϟ','Энергия']];
+    const items=[['earth','◎','Земля'],['weather','☁','Погода'],['space','◉','Космос'],['transport','✈','Транспорт'],['energy','ϟ','Энергия']];
     nav.innerHTML=items.map(([key,icon,label])=>'<button type="button" data-nav-section="'+key+'" aria-pressed="'+(key==='all')+'"><span class="nav-icon" aria-hidden="true">'+icon+'</span><span>'+label+'</span></button>').join('');
     document.body.appendChild(nav);
     const groups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};
@@ -268,7 +268,7 @@
     const syncCoords=()=>{const source=document.getElementById('selectedCoords'),target=document.getElementById('mobileSelectedCoords');if(source&&target){const observer=new MutationObserver(()=>target.textContent=source.textContent);observer.observe(source,{childList:true,subtree:true,characterData:true});target.textContent=source.textContent;}};
     syncCoords();
     window.addEventListener('resize',()=>{if(state.map)state.map.invalidateSize({pan:false});},{passive:true});
-    openSection('all');
+    openSection('earth');
   }
   function start(){setupControls();setupMobileNavigation();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
