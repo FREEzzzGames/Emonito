@@ -664,3 +664,25 @@ body.onboarding-open{overflow:hidden}
   }
   .help-tour span { font-size: 9px !important; }
 }
+
+/* Mobile: remove the duplicate floating map shortcut; keep one unobtrusive HELP control. */
+@media (max-width: 760px) {
+  .map-fab,
+  .map-fab.is-visible {
+    display: none !important;
+  }
+  .help-tour {
+    top: auto !important;
+    right: 10px !important;
+    bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: calc(100vw - 20px) !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0 9px !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+    opacity: .70;
+  }
+}
