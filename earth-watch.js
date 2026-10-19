@@ -8,9 +8,25 @@ export function initEarthWatch({ state }) {
   const set = (id, value) => { const el = $(id); if (el) el.textContent = value == null ? '—' : String(value); };
   const mark = (id, label, error = false) => { const el = $(id); if (el) { el.textContent = label; el.className = 'status' + (error ? ' error' : ' ok'); } };
   const get = async (url) => {
-    const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    return response.json();
+    let requestUrl = url; let route = null; let source; let base = '';
+    try { source = new URL(url); } catch {}
+    try { base = (localStorage.getItem('emonito:edge-api-base') || '').trim().replace(/\\/$/, ''); } catch {}
+    if (base && source) {
+      if (source.hostname === 'services.swpc.noaa.gov' && source.pathname.includes('xrays-6-hour')) route = 'xray';
+      else if (source.hostname === 'services.swpc.noaa.gov' && source.pathname.includes('/products/alerts.json')) route = 'alerts';
+      else if (source.hostname === 'warnung.bund.de' && source.pathname.includes('/mowas/')) route = 'mowas';
+      else if (source.hostname === 'warnung.bund.de' && source.pathname.includes('/dwd/')) route = 'dwd';
+      else if (source.hostname === 'www.smard.de' && source.pathname.endsWith('/index_hour.json')) route = 'smardIndex';
+      else if (source.hostname === 'www.smard.de' && source.pathname.includes('_hour_')) { route = 'smardSeries'; const match = source.pathname.match(/_hour_(\\d+)\\.json$/); if (match) source.searchParams.set('timestamp', match[1]); }
+      else if (source.hostname === 'api.open-meteo.com' && source.pathname.includes('/v1/forecast')) route = 'weather';
+      else if (source.hostname === 'api.open-meteo.com' && source.pathname.includes('/v1/elevation')) route = 'elevation';
+      else if (source.hostname === 'air-quality-api.open-meteo.com') route = 'air';
+      if (route) requestUrl = base + '/' + route + (source.searchParams.size ? '?' + source.searchParams.toString() : '');
+    }
+    const response = await fetch(requestUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    if (!response.ok) throw new Error((route ? 'Edge API ' : 'HTTP ') + response.status);
+    const payload = await response.json();
+    return route && payload && Object.hasOwn(payload, 'data') ? Object.assign(payload.data, { __emonitoMeta: { fetchedAt: payload.fetchedAt, stale: payload.stale } }) : payload;
   };
   let point = state.location || { latitude: 48.89, longitude: 8.70 };
   const coords = () => ({ latitude: Number(point.latitude), longitude: Number(point.longitude) });
