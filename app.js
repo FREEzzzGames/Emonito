@@ -294,6 +294,113 @@ import { setupMobileCollapsibles } from './ui.js';
     window.addEventListener('resize',updateMapFab,{passive:true});
     updateMapFab();
   }
-  function start(){setupControls();setupMobileNavigation();initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES});document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
+
+  // Onboarding is an isolated UI layer; it never owns data fetching or map state.
+  function initOnboarding(){
+    const STORAGE_KEY='emonito-onboarding-v1';
+    const readProgress=()=>{
+      try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');}
+      catch{return {};}
+    };
+    const saveProgress=next=>{
+      try{localStorage.setItem(STORAGE_KEY,JSON.stringify({...readProgress(),...next,updatedAt:new Date().toISOString()}));}
+      catch{/* Private browsing or storage restrictions must not block the app. */}
+    };
+    const progress=readProgress();
+    const tour=document.getElementById('onboardingTour');
+    const overlay=document.getElementById('onboardingOverlay');
+    const card=document.getElementById('onboardingCard');
+    const title=document.getElementById('onboardingTitle');
+    const body=document.getElementById('onboardingBody');
+    const counter=document.getElementById('onboardingCounter');
+    const back=document.getElementById('onboardingBack');
+    const next=document.getElementById('onboardingNext');
+    const skip=document.getElementById('onboardingSkip');
+    const close=document.getElementById('onboardingClose');
+    const help=document.getElementById('helpTour');
+    const steps=[
+      {id:'categories',target:'.intro .toolbar button[data-category="earth"]',category:'earth',title:'Сферы мониторинга',body:'Выбирайте EARTH, WEATHER, SPACE, TRANSPORT или ENERGY. Вкладки переключают наборы данных внутри одной панели.'},
+      {id:'map',target:'.map-panel .map-wrap',category:'earth',title:'Карта и слои',body:'Меняйте масштаб карты, выбирайте подложку и включайте тематические слои. Геолокация включается только по вашему действию.'},
+      {id:'metrics',target:'.metric .value#quakeCount',category:'earth',title:'Карточки показателей',body:'Некоторые карточки открывают подробности в соответствующем модуле. Время и источник помогают правильно интерпретировать значения.'},
+      {id:'statuses',target:'#mapStatus',category:'earth',title:'Статусы источников',body:'LIVE означает, что источник ответил, но не гарантирует мгновенное обновление каждого значения. UNAVAILABLE означает, что данные сейчас недоступны.'},
+      {id:'refresh',target:'#refreshAll',category:'earth',title:'Обновление и UTC',body:'UTC — универсальное координированное время. Кнопка обновления повторно запрашивает данные; источники могут обновляться с разной периодичностью.'}
+    ];
+    let index=0,activeTarget=null,previousFocus=null,scrollHandler=null;
+    const reduced=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const visible=el=>!!el&&el.isConnected&&el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden';
+    function removeSpotlight(){document.querySelectorAll('.onboarding-spotlight').forEach(el=>el.classList.remove('onboarding-spotlight'));activeTarget=null;}
+    function position(){
+      if(!tour||tour.hidden||!activeTarget)return;
+      const rect=activeTarget.getBoundingClientRect();
+      overlay.style.setProperty('--spot-x',Math.max(0,rect.left-6)+'px');
+      overlay.style.setProperty('--spot-y',Math.max(0,rect.top-6)+'px');
+      overlay.style.setProperty('--spot-w',Math.min(window.innerWidth- Math.max(0,rect.left-6),rect.width+12)+'px');
+      overlay.style.setProperty('--spot-h',Math.min(window.innerHeight- Math.max(0,rect.top-6),rect.height+12)+'px');
+      const cardRect=card.getBoundingClientRect();
+      const below=window.innerHeight-rect.bottom;
+      card.classList.toggle('onboarding-card--top',below<cardRect.height+18&&rect.top>cardRect.height+18);
+    }
+    function finish(status){
+      if(!tour||tour.hidden)return;
+      tour.hidden=true;overlay.hidden=true;removeSpotlight();
+      document.body.classList.remove('onboarding-open');
+      window.removeEventListener('resize',position);
+      window.removeEventListener('scroll',scrollHandler,true);
+      saveProgress({tourStatus:status,completedSteps:status==='completed'?steps.map(s=>s.id):(progress.completedSteps||[])});
+      if(previousFocus&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});
+    }
+    function render(){
+      const step=steps[index];
+      document.querySelectorAll('[data-category]').forEach(btn=>{
+        if(btn.dataset.category===step.category&&!btn.classList.contains('active'))btn.click();
+      });
+      let target=document.querySelector(step.target);
+      if(!visible(target)&&step.id==='metrics')target=document.querySelector('.metric .value#eventCount');
+      if(!visible(target)){
+        // A missing target must never leave an unusable modal.
+        index++;
+        if(index>=steps.length){finish('completed');return;}
+        render();return;
+      }
+      removeSpotlight();activeTarget=target;target.classList.add('onboarding-spotlight');
+      title.textContent=step.title;body.textContent=step.body;
+      counter.textContent=(index+1)+' / '+steps.length;
+      back.disabled=index===0;
+      next.textContent=index===steps.length-1?'Начать мониторинг':'Далее →';
+      overlay.hidden=false;tour.hidden=false;document.body.classList.add('onboarding-open');
+      requestAnimationFrame(position);
+    }
+    function start(){
+      previousFocus=document.activeElement;
+      index=0;saveProgress({tourStatus:'in_progress'});
+      render();
+      scrollHandler=()=>requestAnimationFrame(position);
+      window.addEventListener('resize',position,{passive:true});
+      window.addEventListener('scroll',scrollHandler,true);
+      card.focus({preventScroll:true});
+    }
+    back.addEventListener('click',()=>{if(index>0){index--;render();}});
+    next.addEventListener('click',()=>{if(index===steps.length-1)finish('completed');else{index++;render();}});
+    skip.addEventListener('click',()=>finish('skipped'));
+    close.addEventListener('click',()=>finish('skipped'));
+    help.addEventListener('click',start);
+    overlay.addEventListener('click',event=>{if(event.target===overlay)finish('skipped');});
+    document.addEventListener('keydown',event=>{
+      if(tour.hidden)return;
+      if(event.key==='Escape'){event.preventDefault();finish('skipped');}
+      if(event.key==='Tab'){
+        const focusables=[back,next,skip,close].filter(el=>!el.disabled&&el.offsetParent!==null);
+        if(!focusables.length)return;
+        const first=focusables[0],last=focusables[focusables.length-1];
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+      }
+    });
+    if(!['completed','skipped'].includes(progress.tourStatus)){
+      // Do not interrupt initial rendering/data loading; show after the page has initialized.
+      window.setTimeout(start,700);
+    }
+  }
+\n  function start(){setupControls();setupMobileNavigation();initOnboarding();initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES});document.querySelector('[data-category="earth"]')?.click();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
