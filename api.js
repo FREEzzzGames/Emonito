@@ -27,7 +27,7 @@ export function createApi(requests = new Map()) {
       try {
         return await response.json();
       } catch (error) {
-        throw new Error(`Invalid JSON from ${new URL(key, location.href).hostname}: ${error.message}`);
+        throw new Error(`Invalid JSON from ${new URL(key).hostname}: ${error.message}`);
       }
     } catch (error) {
       if (timedOut) throw new Error(`Request timed out after ${timeout} ms`);
