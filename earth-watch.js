@@ -144,6 +144,19 @@ export function initEarthWatch({ state }) {
       const detail = document.createElement('div'); detail.className = 'row-detail'; detail.textContent = item.detail;
       left.append(title, detail); li.append(left); list.append(li);
     });
+    let edgeConfigured = false;
+    try { edgeConfigured = Boolean((localStorage.getItem('emonito:edge-api-base') || '').trim()); } catch {}
+    if (!edgeConfigured) {
+      const li = document.createElement('li'); li.className = 'data-row';
+      const left = document.createElement('div'); left.className = 'row-main';
+      const title = document.createElement('div'); title.className = 'row-title'; title.textContent = 'Live-ленты требуют Edge API';
+      const detail = document.createElement('div'); detail.className = 'row-detail'; detail.textContent = 'Клиент не опрашивает нестабильные транспортные endpoints напрямую. Разверните Worker из workers/ и укажите его URL кнопкой Edge API на карте.';
+      left.append(title, detail); li.append(left); list.prepend(li);
+      set('infraCoverage', '5 официальных источников · live API через Worker');
+      set('infraNotice', 'Без настроенного Worker отображаются официальные ссылки; live-предупреждения не запрашиваются. Это предотвращает зависимость клиента от CORS и прямых запросов к нестабильным лентам.');
+      mark('infraStatus', 'EDGE API НЕ НАСТРОЕН', true);
+      return;
+    }
     set('infraCoverage', '5 источников · NINA + SMARD');
     const results = await Promise.allSettled([
       get('https://warnung.bund.de/api31/mowas/mapData.json'),
