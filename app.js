@@ -149,7 +149,7 @@
   }
   async function loadEnergy(){
     $status('energyStatus','LOADING');
-    try{const d=await fetch('https://ourworldindata.org/grapher/electricity-prod-source-stacked.csv?tab=chart&time=latest&csvType=full&useColumnShortNames=true');if(!d.ok)throw new Error('HTTP '+d.status);const csv=await d.text();const lines=csv.trim().split(/\r?\n/);const header=parseCSVLine(lines[0]);const countryIndex=header.indexOf('Entity');const yearIndex=header.indexOf('Year');const rows=lines.slice(1).map(parseCSVLine).filter(cells=>cells[countryIndex]==='Germany').sort((a,b)=>Number(b[yearIndex])-Number(a[yearIndex])).slice(0,5);setList('energyList',rows.map(cells=>makeRow('Germany electricity production','Year '+(cells[yearIndex]||'—')+' · Our World in Data',cells.slice(2).filter(v=>v!==undefined&&v!=='').slice(0,3).join(' / '))),'Historical electricity dataset returned no rows.');text('energyCount','Historical');$status('energyStatus','HISTORICAL · OWID','ok');}
+    try{const d=await fetch('https://ourworldindata.org/grapher/electricity-prod-source-stacked.csv?tab=chart&time=latest&csvType=full&useColumnShortNames=true');if(!d.ok)throw new Error('HTTP '+d.status);const csv=await d.text();const lines=csv.trim().split(/\r?\n/);const header=parseCSVLine(lines[0]);const countryIndex=header.indexOf('Entity');const yearIndex=header.indexOf('Year');const rows=lines.slice(1).map(parseCSVLine).filter(cells=>cells[countryIndex]==='Germany').sort((a,b)=>Number(b[yearIndex])-Number(a[yearIndex])).slice(0,5);setList('energyList',rows.map(cells=>makeRow('Germany electricity production','Year '+(cells[yearIndex]||'—')+' · Our World in Data',cells.filter((v,i)=>i>yearIndex&&v!==undefined&&v!=='').slice(0,3).join(' / '))),'Historical electricity dataset returned no rows.');text('energyCount','Historical');$status('energyStatus','HISTORICAL · OWID','ok');}
     catch(e){text('energyCount','—');$status('energyStatus','UNAVAILABLE','error');setList('energyList',[],'Energy dataset unavailable. ENTSO-E near-real-time data needs a registered API token.');}
   }
   async function loadHistory(){
@@ -183,14 +183,28 @@
       if(state.map)setTimeout(()=>state.map.invalidateSize({pan:false}),80);
     }
     document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{applyCategory(btn.dataset.category);if(window.matchMedia('(max-width: 760px)').matches)btn.scrollIntoView({block:'nearest',inline:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
-    $('imageryMode')?.addEventListener('change',e=>{if(!state.map)return;state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);});
+    $('imageryMode')?.addEventListener('change',e=>{
+      if(!state.map)return;
+      state.map.removeLayer(state.layers.satellite);state.map.removeLayer(state.layers.clouds);
+      if(e.target.value==='satellite')state.layers.satellite.addTo(state.map);
+      if(e.target.value==='clouds')state.layers.clouds.addTo(state.map);
+      document.querySelectorAll('[data-layer-toggle="satellite"],[data-layer-toggle="clouds"]').forEach(input=>{input.checked=input.dataset.layerToggle===e.target.value;});
+    });
     $('mapRefreshTransport')?.addEventListener('click',()=>{zoomToTransport();});
     $('layerMenuToggle')?.addEventListener('click',()=>{const menu=$('layerMenu'),button=$('layerMenuToggle');if(!menu)return;menu.hidden=!menu.hidden;button.setAttribute('aria-expanded',String(!menu.hidden));});
     document.querySelectorAll('[data-layer-toggle]').forEach(input=>input.addEventListener('change',()=>{
       const key=input.dataset.layerToggle,layer=state.layers[key];
       if(key==='satellite'||key==='clouds'){
-        const mode=$('imageryMode');if(input.checked){if(key==='satellite'&&mode)mode.value='satellite';if(key==='clouds'&&mode)mode.value='clouds';layer?.addTo(state.map);}
-        else{if(layer&&state.map.hasLayer(layer))state.map.removeLayer(layer);if(mode&&mode.value===key)mode.value='street';if(key==='satellite'&&state.map.hasLayer(state.layers.clouds))state.map.removeLayer(state.layers.clouds);if(key==='clouds'&&state.map.hasLayer(state.layers.satellite))state.map.removeLayer(state.layers.satellite);}
+        const mode=$('imageryMode'),other=key==='satellite'?'clouds':'satellite';
+        if(input.checked){
+          state.map.removeLayer(state.layers[other]);state.layers[key]?.addTo(state.map);
+          document.querySelector('[data-layer-toggle="'+other+'"]')?.setAttribute('checked','');
+          const otherInput=document.querySelector('[data-layer-toggle="'+other+'"]');if(otherInput)otherInput.checked=false;
+          if(mode)mode.value=key;
+        }else{
+          if(layer&&state.map.hasLayer(layer))state.map.removeLayer(layer);
+          if(mode&&mode.value===key)mode.value='street';
+        }
         return;
       }
       if(!layer||!state.map)return;
