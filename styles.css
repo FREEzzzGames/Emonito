@@ -13,17 +13,23 @@
   }
 
   html {
+    height: auto;
     min-height: 100%;
-    overflow-x: clip;
-    overflow-y: auto;
+    overflow-x: hidden;
+    overflow-y: scroll;
     -webkit-text-size-adjust: 100%;
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
+    display: block;
+    width: 100%;
+    height: auto;
     min-height: 100vh;
     min-height: 100dvh;
     margin: 0;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
     overscroll-behavior-y: auto;
     touch-action: pan-y;
     background: var(--bg);
