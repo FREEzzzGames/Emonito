@@ -6,12 +6,12 @@
   html,body{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
   body{overscroll-behavior-y:contain;background:#121619}
   .shell{height:auto;min-height:100dvh;display:flex;flex-direction:column;overflow:visible;padding:0 0 calc(16px + env(safe-area-inset-bottom))}
-  .top{position:sticky;top:0;z-index:100;min-height:58px;padding:8px 13px;background:rgba(8,12,15,.97);backdrop-filter:blur(14px)}
+  .top{position:relative;top:auto;z-index:20;min-height:58px;padding:8px 13px;background:rgba(8,12,15,.97)}
   .brand{gap:9px}.mark{width:25px;height:25px}h1{font-size:19px;letter-spacing:.13em}.sub{font-size:8px;letter-spacing:.06em}
   .top-right{gap:8px;font-size:10px}.top-right>span:first-child{display:none}
   #refreshAll{font-size:0;padding:5px 10px;min-width:38px}#refreshAll:after{content:"↻";font-size:21px}
   .intro{display:none}
-  .mobile-category-tabs{display:flex;order:0;position:sticky;top:58px;z-index:90;gap:7px;overflow-x:auto;flex-wrap:nowrap;padding:9px 10px;background:#121619;border-bottom:1px solid #34414a;scrollbar-width:none}
+  .mobile-category-tabs{display:flex;order:0;position:sticky;top:0;z-index:100;gap:7px;overflow-x:auto;flex-wrap:nowrap;padding:9px 10px;background:#121619;border-bottom:1px solid #34414a;scrollbar-width:none}
   .mobile-category-tabs::-webkit-scrollbar{display:none}
   .mobile-category-tabs{width:100%;min-width:0;box-sizing:border-box;flex:0 0 auto;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-x:contain}
   .mobile-category-tabs button{flex:0 0 auto;min-width:max-content;min-height:40px;padding:8px clamp(10px,3vw,13px);border-radius:9px;font-size:clamp(11px,3.2vw,13px);font-weight:700;white-space:nowrap;scroll-snap-align:start;background:#1a2227;border-color:#344650}
