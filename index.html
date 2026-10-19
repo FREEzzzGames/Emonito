@@ -132,7 +132,7 @@
     <div><strong>Загрязнители воздуха</strong><p>PM2.5 <b id="envPm25">—</b> · PM10 <b id="envPm10">—</b></p><p>NO₂ <b id="envNo2">—</b> · O₃ <b id="envOzone">—</b></p></div>
     <div><strong>Пыльца · прогноз для поддерживаемых регионов</strong><p id="envPollen">Загрузка пыльцевых данных…</p></div>
   </div>
-  <p class="local-radar-note">Погода и пыльца могут быть модельными прогнозами, а не измерениями ближайшей станции. Отсутствующие переменные и регионы без покрытия показываются как недоступные. Источник: Open-Meteo.</p>
+  <details class="earth-watch-info"><summary>ⓘ Методика и ограничения</summary><p>Погода и пыльца могут быть модельными прогнозами, а не измерениями ближайшей станции. Отсутствующие переменные и регионы без покрытия показываются как недоступные. Источник: Open-Meteo.</p></details>
 </section>
 
 <section class="panel earth-watch-panel" id="spaceWeatherWatch" data-module="space">
@@ -145,14 +145,14 @@
   </div>
   <div class="head earth-watch-subhead"><span class="title">NOAA SWPC · ALERT FEED</span><span class="status" id="spaceAlertsStatus">ОЖИДАНИЕ</span></div>
   <ul class="list" id="spaceAlerts"><li class="empty">Загрузка официальных предупреждений NOAA…</li></ul>
-  <p class="local-radar-note">Классы A/B/C/M/X рассчитываются по потоку рентгеновского излучения GOES. Класс потока не равен отдельному подтверждённому событию вспышки; предупреждения приведены из ленты NOAA. Возможные последствия для связи — риск, не гарантия сбоя.</p>
+  <details class="earth-watch-info"><summary>ⓘ Методика и ограничения</summary><p>Классы A/B/C/M/X рассчитываются по потоку рентгеновского излучения GOES. Класс потока не равен отдельному подтверждённому событию вспышки; предупреждения приведены из ленты NOAA. Возможные последствия для связи — риск, не гарантия сбоя.</p></details>
 </section>
 
 <section class="panel earth-watch-panel" id="infrastructureWatch" data-module="transport">
   <div class="head"><span class="title">23 / INFRASTRUCTURE WATCH · GERMANY</span><span class="status" id="infraStatus">ОЖИДАНИЕ</span></div>
   <div class="earth-watch-toolbar"><span id="infraCoverage">Проверка доступных источников…</span><button type="button" id="infraRefresh">↻ Обновить каталог</button></div>
   <ul class="list" id="infraSources"><li class="empty">Проверка каталога первоисточников…</li></ul>
-  <p class="local-radar-note" id="infraNotice">Здесь отображаются только подтверждённые возможности источников. Наличие официальной страницы не означает, что её события уже загружаются в карту автоматически.</p>
+  <details class="earth-watch-info"><summary>ⓘ Покрытие и ограничения</summary><p id="infraNotice">Публичные ленты не покрывают все локальные неисправности. Наличие официальной страницы не означает, что все её события загружаются автоматически.</p></details>
 </section>
 
 <section class="panel local-radar-panel" id="localRadarPanel" data-module="space">
