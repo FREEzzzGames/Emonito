@@ -24,6 +24,7 @@ export function initEnhancements({ state }) {
     <button type="button" id="emoAmbient" aria-pressed="false">◉ Ambient</button>
     <button type="button" id="emoWake" aria-pressed="false">Экран: авто</button>
     <button type="button" id="emoApi" title="Настроить URL развёрнутого Edge Worker">Edge API</button>
+    <button type="button" id="emoThresholds" title="Настроить пороги AQI и UV">Пороги</button>
     <span class="emo-freshness" id="emoFreshness" role="status">Проверка свежести…</span>`;
   tools.append(controls);
 
@@ -39,6 +40,8 @@ export function initEnhancements({ state }) {
       <div><span>ВЛАЖНОСТЬ</span><strong id="emoHumidity">—</strong></div>
       <div><span>AQI</span><strong id="emoAqi">—</strong></div>
       <div><span>ВЫСОТА</span><strong id="emoElevation">—</strong></div>
+      <div><span>МКС · ДИСТАНЦИЯ ПО ПОВЕРХНОСТИ</span><strong id="emoIssDistance">—</strong></div>
+      <div><span>БЛИЖАЙШЕЕ ЗЕМЛЕТРЯСЕНИЕ</span><strong id="emoQuake">—</strong></div>
     </div>
     <p id="emoPointStatus">Получение данных…</p>
     <div class="emo-inspector-actions"><button type="button" id="emoAddFavorite">☆ Сохранить точку</button><button type="button" id="emoCopyCoords">Копировать координаты</button></div>
@@ -177,6 +180,19 @@ export function initEnhancements({ state }) {
     $('emoHumidity').textContent = Number.isFinite(Number(weather.relative_humidity_2m)) ? nfmt(weather.relative_humidity_2m, 0) + '%' : 'Н/Д';
     $('emoAqi').textContent = Number.isFinite(Number(air.european_aqi)) ? nfmt(air.european_aqi, 0) : 'Н/Д';
     $('emoElevation').textContent = Number.isFinite(Number(elevation)) ? nfmt(elevation, 0) + ' м' : 'Н/Д';
+    const iss = state.issPosition;
+    if (iss && Number.isFinite(iss.latitude) && Number.isFinite(iss.longitude)) {
+      const rad = Math.PI / 180, dLat = (iss.latitude - selected.latitude) * rad, dLon = (iss.longitude - selected.longitude) * rad;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(selected.latitude * rad) * Math.cos(iss.latitude * rad) * Math.sin(dLon / 2) ** 2;
+      $('emoIssDistance').textContent = nfmt(6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)), 0) + ' км';
+    } else $('emoIssDistance').textContent = 'Н/Д';
+    const nearest = (state.quakeFeatures || []).map(feature => {
+      const c = feature.geometry?.coordinates || []; if (c.length < 2) return null;
+      const rad = Math.PI / 180, dLat = (c[1] - selected.latitude) * rad, dLon = (c[0] - selected.longitude) * rad;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(selected.latitude * rad) * Math.cos(c[1] * rad) * Math.sin(dLon / 2) ** 2;
+      return { feature, km: 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) };
+    }).filter(Boolean).sort((a,b) => a.km - b.km)[0];
+    $('emoQuake').textContent = nearest && nearest.km < 500 ? 'M' + nfmt(nearest.feature.properties?.mag, 1) + ' · ' + nfmt(nearest.km, 0) + ' км' : 'Нет в загруженном фиде';
     const failures = results.filter(r => r.status === 'rejected').length;
     $('emoPointStatus').textContent = failures === 0 ? 'Модельные данные получены · ' + new Date().toLocaleTimeString() : failures + ' источник(а) недоступны; недостающие значения не подменены.';
     if (Number.isFinite(Number(air.european_aqi)) && Number(air.european_aqi) >= thresholds.aqi) notify('AQI достиг порога ' + thresholds.aqi + ': ' + nfmt(air.european_aqi, 0));
@@ -228,6 +244,14 @@ export function initEnhancements({ state }) {
   $('emoSavePreset').addEventListener('click', savePreset);
   $('emoAmbient').addEventListener('click', () => toggleAmbient(!ambient));
   $('emoWake').addEventListener('click', () => toggleWake(!wakeLock));
+  $('emoThresholds').addEventListener('click', () => {
+    const aqi = window.prompt('Порог European AQI для предупреждения', String(thresholds.aqi)); if (aqi === null) return;
+    const uv = window.prompt('Порог UV-индекса для предупреждения', String(thresholds.uv)); if (uv === null) return;
+    const nextAqi = Number(aqi), nextUv = Number(uv);
+    if (!Number.isFinite(nextAqi) || nextAqi < 1 || !Number.isFinite(nextUv) || nextUv < 0 || nextUv > 30) { window.alert('Укажите AQI ≥ 1 и UV от 0 до 30.'); return; }
+    thresholds.aqi = nextAqi; thresholds.uv = nextUv; write(STORE.thresholds, thresholds);
+    $('emoPointStatus').textContent = 'Пороги сохранены на этом устройстве.';
+  });
   $('emoApi').addEventListener('click', () => {
     let current = ''; try { current = localStorage.getItem('emonito:edge-api-base') || ''; } catch {}
     const next = window.prompt('URL развёрнутого Cloudflare Worker (HTTPS). Пустое поле отключает прокси.', current);
