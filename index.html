@@ -55,7 +55,7 @@
 
 <section class="panel third monitor-module" data-module="maritime" id="moduleMaritime">
   <div class="head"><span class="title">13 / MARITIME + SUBSEA NETWORKS</span><span class="status" id="maritimeStatus">NOT LOADED</span></div>
-  <div class="module-toolbar"><button type="button" class="module-info" data-info="maritime" aria-label="О модуле морских кабелей">i</button><button type="button" data-retry="maritime">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="cables"> Кабели на карте</label></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="maritime" aria-label="О модуле морских кабелей">i</button><button type="button" data-retry="maritime">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="cablesToggle" data-module-layer="cables"> Кабели на карте</label></div>
   <p class="module-description" id="maritimeMessage">Подводные магистрали и морские узлы. Сведения о судах требуют отдельного AIS-поставщика.</p>
   <div class="module-stats"><div><span>Маршруты</span><strong id="cableCount">—</strong></div><div><span>Морские хабы</span><strong id="portCount">—</strong></div></div>
   <ul class="list" id="maritimeList"><li class="empty">Ожидание данных кабельной карты…</li></ul>
@@ -63,7 +63,7 @@
 </section>
 <section class="panel third monitor-module" data-module="space" id="moduleSatellite">
   <div class="head"><span class="title">14 / GOES · EARTH DISK</span><span class="status" id="satelliteStatus">NOT LOADED</span></div>
-  <div class="module-toolbar"><button type="button" class="module-info" data-info="satellite" aria-label="О спутниковом модуле">i</button><button type="button" data-retry="satellite">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="goes"> Спутник на карте</label></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="satellite" aria-label="О спутниковом модуле">i</button><button type="button" data-retry="satellite">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="goesToggle" data-module-layer="goes"> Спутник на карте</label></div>
   <p class="module-description" id="satelliteMessage">Спутниковая подложка и временной срез. Доступность и задержка зависят от выбранного продукта.</p>
   <div class="module-timeline"><label for="satelliteHours">Архив: <span id="satelliteTimeLabel">−3 ч</span></label><input id="satelliteHours" type="range" min="0" max="6" value="3" step="1"><button type="button" id="satellitePlay" aria-pressed="false">▶ PLAY</button></div>
   <div class="module-tip" id="satelliteTip" hidden>Полный диск GOES показывает облачность над своей зоной наблюдения. Это не глобальный одновременный снимок; временная метка указывает запрошенный кадр.</div>
@@ -79,7 +79,7 @@
 </section>
 <section class="panel third monitor-module" data-module="space" id="moduleAurora">
   <div class="head"><span class="title">16 / AURORA + SOLAR WIND</span><span class="status" id="auroraStatus">NOT LOADED</span></div>
-  <div class="module-toolbar"><button type="button" class="module-info" data-info="aurora" aria-label="О полярных сияниях">i</button><button type="button" data-retry="aurora">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="aurora"> Слой на карте</label></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="aurora" aria-label="О полярных сияниях">i</button><button type="button" data-retry="aurora">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="auroraToggle" data-module-layer="aurora"> Слой на карте</label></div>
   <div class="aurora-reading"><strong id="auroraLevel">—</strong><span id="auroraBadge" class="aurora-badge">ОЖИДАНИЕ ДАННЫХ</span></div>
   <p class="module-description" id="auroraMessage">NOAA OVATION: вероятность полярного сияния. Прогноз вероятности не гарантирует видимость на земле.</p>
   <div class="aurora-scale"><span>🟢 Kp 0–3 · Тихо</span><span>🟡 Kp 4–5 · Повышенная активность</span><span>🔴 Kp 6+ · Сильный шторм</span></div>
@@ -87,7 +87,7 @@
 </section>
 <section class="panel third monitor-module" data-module="earth" id="moduleNight">
   <div class="head"><span class="title">17 / NIGHT EARTH · VIIRS</span><span class="status" id="nightStatus">NOT LOADED</span></div>
-  <div class="module-toolbar"><button type="button" class="module-info" data-info="night" aria-label="О ночных огнях">i</button><button type="button" data-retry="night">↻ Повторить</button><label class="module-switch"><input type="checkbox" data-module-layer="night"> Ночной слой на карте</label></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="night" aria-label="О ночных огнях">i</button><button type="button" data-retry="night">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="nightToggle" data-module-layer="night"> Ночной слой на карте</label></div>
   <p class="module-description" id="nightMessage">Спутниковые наблюдения ночной освещённости. Снимки зависят от облаков, Луны и времени пролёта.</p>
   <div class="module-segment" role="group" aria-label="Режим ночной освещённости"><button type="button" data-night-mode="normal" class="active">Стандартная ночь</button><button type="button" data-night-mode="anomaly">Сравнение / аномалии</button></div>
   <div class="night-legend"><span><i></i> Наблюдаемое свечение</span><small id="nightModeNote">Слой наблюдений, не live-датчик отключений</small></div>
