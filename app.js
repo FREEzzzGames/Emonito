@@ -187,7 +187,7 @@
         return;
       }
       if(!layer||!state.map)return;
-      if(input.checked){layer.addTo(state.map);if(key==='transport')zoomToTransport(false);if(key==='aircraft')zoomToTransport(false);}
+      if(input.checked){layer.addTo(state.map);if(key==='transport'||key==='aircraft')zoomToTransport();}
       else if(state.map.hasLayer(layer))state.map.removeLayer(layer);
     }));
     $('quakeTimeline')?.addEventListener('change',e=>{state.quakeWindowHours=Number(e.target.value)||24;loadQuakes();});
