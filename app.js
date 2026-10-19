@@ -184,8 +184,16 @@
         b.classList.toggle('active',active);
         b.setAttribute('aria-pressed',String(active));
       });
+      const mobile=window.matchMedia('(max-width: 760px)').matches;
+      const mapPanel=document.querySelector('.map-panel');
+      const mapSummary=document.querySelector('.mobile-map-summary');
+      // On phones, a category must replace the current workspace, not merely
+      // change the active pill below a map that fills the viewport.
+      const showMap=!mobile||category==='earth'||category==='transport';
+      if(mapPanel)mapPanel.hidden=!showMap;
+      if(mapSummary)mapSummary.hidden=!showMap;
       document.querySelectorAll('[data-module]').forEach(el=>{
-        if(el.classList.contains('map-panel')||el.classList.contains('mobile-map-summary')){el.hidden=false;return;}
+        if(el.classList.contains('map-panel'))return;
         el.hidden=!!allowed&&!allowed.has(el.dataset.module);
       });
       state.selectedCategory=category;
