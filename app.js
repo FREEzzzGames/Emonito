@@ -152,6 +152,46 @@
     $('mapRefreshTransport')?.addEventListener('click',()=>{loadTransport();loadAircraft();});
   }
   async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather(),loadNEO(),loadTransport(),loadAircraft(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
-  function start(){setupControls();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
+
+  function setupMobileNavigation(){
+    const grid=document.querySelector('.grid'), mapPanel=document.querySelector('.map-panel');
+    if(!grid||!mapPanel||document.getElementById('mobileNav'))return;
+    const drawer=document.createElement('section');
+    drawer.id='mobileDrawer';drawer.className='mobile-drawer';drawer.setAttribute('aria-label','Данные выбранного раздела');
+    drawer.innerHTML='<button class="drawer-handle" id="drawerToggle" type="button" aria-label="Свернуть или развернуть панель"><span></span><b id="drawerTitle">Данные раздела</b><span class="drawer-chevron">⌄</span></button><div class="drawer-scroll" id="drawerScroll"></div>';
+    const scroll=drawer.querySelector('#drawerScroll');
+    const cards=[...grid.children].filter(el=>el!==mapPanel);
+    cards.forEach(el=>scroll.appendChild(el));
+    grid.insertBefore(drawer,mapPanel.nextSibling);
+    const nav=document.createElement('nav');nav.id='mobileNav';nav.className='mobile-nav';nav.setAttribute('aria-label','Главные разделы');
+    const items=[
+      ['earth','◎','Земля'],['weather','☁','Погода'],['space','◉','Космос'],['transport','✈','Транспорт'],['energy','ϟ','Энергия']
+    ];
+    nav.innerHTML=items.map(([key,icon,label])=>'<button type="button" data-nav-section="'+key+'" aria-pressed="false"><span class="nav-icon" aria-hidden="true">'+icon+'</span><span>'+label+'</span></button>').join('');
+    document.body.appendChild(nav);
+    const groups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};
+    function openSection(key){
+      const allowed=groups[key]||groups.earth;
+      scroll.querySelectorAll('[data-module]').forEach(el=>{el.hidden=!(allowed.has(el.dataset.module)||el.dataset.module===key);});
+      nav.querySelectorAll('button').forEach(b=>{const active=b.dataset.navSection===key;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+      const label=items.find(x=>x[0]===key)?.[2]||'Данные раздела';
+      drawer.querySelector('#drawerTitle').textContent=label+' · данные и графики';
+      drawer.classList.add('open');
+      document.body.dataset.activeSection=key;
+      if(state.map){setTimeout(()=>state.map.invalidateSize({pan:false}),180);}
+    }
+    nav.addEventListener('click',e=>{const b=e.target.closest('[data-nav-section]');if(!b)return;const key=b.dataset.navSection;if(document.body.dataset.activeSection===key&&drawer.classList.contains('open')){drawer.classList.remove('open');return;}openSection(key);});
+    drawer.querySelector('#drawerToggle').addEventListener('click',()=>drawer.classList.toggle('expanded'));
+    let startY=0;
+    drawer.querySelector('.drawer-handle').addEventListener('touchstart',e=>{startY=e.touches[0].clientY;},{passive:true});
+    drawer.querySelector('.drawer-handle').addEventListener('touchend',e=>{const dy=e.changedTouches[0].clientY-startY;if(dy>35)drawer.classList.remove('expanded');else if(dy< -35)drawer.classList.add('expanded');},{passive:true});
+    // Default state: map first, panel collapsed. No required gestures.
+    scroll.querySelectorAll('[data-module]').forEach(el=>{el.hidden=true;});
+    const closeOnEscape=e=>{if(e.key==='Escape')drawer.classList.remove('open');};
+    document.addEventListener('keydown',closeOnEscape);
+    window.addEventListener('resize',()=>{if(state.map)state.map.invalidateSize({pan:false});},{passive:true});
+  }
+
+  function start(){setupControls();setupMobileNavigation();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
