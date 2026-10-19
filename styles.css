@@ -186,3 +186,27 @@ body.dashboard-mode .side { grid-template-columns: repeat(3, minmax(0,1fr)); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Mobile-only collapsible panels are controlled by ui.js. */
+.panel__toggle { display: none; }
+@media (max-width: 760px) {
+  .panel .head { position: relative; padding-right: 8px; }
+  .panel__toggle {
+    display: inline-flex;
+    flex: 0 0 34px;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 7px;
+    color: var(--lime);
+    font-size: 20px;
+    line-height: 1;
+  }
+  .panel--collapsed > :not(.head) { display: none !important; }
+  .panel--collapsed > .head { min-height: 56px; }
+  .panel--collapsed > .head .title { flex: 1 1 auto; }
+}
