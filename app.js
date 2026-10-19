@@ -154,6 +154,7 @@
   async function refreshAll(){text('lastRefresh','Updating…');await Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather(),loadNEO(),loadTransport(),loadAircraft(),loadEnergy(),loadHistory()]);state.lastUpdated=new Date();text('lastRefresh','Updated '+state.lastUpdated.toLocaleTimeString());}
 
   function setupMobileNavigation(){
+    if(!window.matchMedia('(max-width: 760px)').matches)return;
     const grid=document.querySelector('.grid'), mapPanel=document.querySelector('.map-panel');
     if(!grid||!mapPanel||document.getElementById('mobileNav'))return;
     const drawer=document.createElement('section');
