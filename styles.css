@@ -211,3 +211,124 @@
 @media (prefers-reduced-motion:reduce) {
   .panel, .toolbar button, .panel__toggle { transition:none; }
 }
+
+
+/* EMONITO header refinement — unify the masthead with the instrument-panel UI. */
+.top {
+  min-width: 0;
+  background: linear-gradient(180deg, #0d1215 0%, #090d10 100%);
+  border-bottom: 1px solid #2b3940;
+}
+.brand { min-width: 0; }
+.brand > div { min-width: 0; }
+.top-right { gap: 10px; }
+#refreshAll {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-color: #35464f;
+  border-radius: 5px;
+  background: #151d22;
+  color: var(--cyan);
+  font-size: 10px;
+  letter-spacing: .04em;
+}
+#refreshAll:hover {
+  border-color: var(--cyan);
+  background: #102630;
+}
+#refreshAll::after { content: none; }
+
+@media (max-width: 760px) {
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 72px;
+    padding: 10px 12px;
+    background: #0b1013;
+    border-bottom: 1px solid #2d3b42;
+  }
+  .brand {
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .mark {
+    width: 27px;
+    height: 27px;
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(186,255,61,.08);
+  }
+  h1 {
+    font-size: clamp(15px, 4.2vw, 18px);
+    line-height: 1.15;
+    letter-spacing: .13em;
+    white-space: nowrap;
+  }
+  .sub {
+    max-width: 190px;
+    margin-top: 4px;
+    font-size: 7px;
+    line-height: 1.35;
+    letter-spacing: .055em;
+    white-space: normal;
+  }
+  .top-right {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    grid-template-rows: auto auto;
+    align-items: center;
+    justify-items: end;
+    flex: 0 0 auto;
+    gap: 3px 7px;
+    max-width: 155px;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+  .top-right > span:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    white-space: nowrap;
+  }
+  .top-right > span:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    margin-right: 4px;
+  }
+  #refreshAll {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border: 1px solid #35464f;
+    border-radius: 5px;
+    background: #151d22;
+    color: var(--cyan);
+    font-size: 0;
+  }
+  #refreshAll::after {
+    content: "↻";
+    font-size: 20px;
+    line-height: 1;
+  }
+}
+@media (max-width: 380px) {
+  .top { padding-inline: 9px; gap: 6px; }
+  .brand { gap: 7px; }
+  .sub { max-width: 155px; font-size: 6.5px; }
+  .top-right { max-width: 137px; gap: 3px 5px; font-size: 8px; }
+}
