@@ -559,3 +559,29 @@ body.onboarding-open{overflow:hidden}
  .onboarding-actions button{min-height:48px}
 }
 @media(prefers-reduced-motion:reduce){.onboarding-overlay,.onboarding-card{scroll-behavior:auto}}
+
+/* Compact, restrained return-to-map control */
+.map-fab {
+  min-height: 38px;
+  min-width: 0;
+  padding: 0 11px;
+  gap: 5px;
+  border-radius: 7px;
+  border-color: rgba(75, 215, 255, .70);
+  background: rgba(12, 37, 47, .70);
+  color: rgba(169, 239, 255, .96);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .24);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+.map-fab.is-visible { opacity: .70; }
+@media (max-width: 640px) {
+  .map-fab {
+    right: 10px;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+}
