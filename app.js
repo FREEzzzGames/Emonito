@@ -246,29 +246,10 @@
       card.dataset.mobileAccordion=String(index);
     });
 
-    // Persistent category shortcuts. The main map and location summary always remain visible.
-    const nav=document.createElement('nav');nav.id='mobileNav';nav.className='mobile-nav';nav.setAttribute('aria-label','Главные разделы');
-    const items=[['earth','◎','Земля'],['weather','☁','Погода'],['space','◉','Космос'],['transport','✈','Транспорт'],['energy','ϟ','Энергия']];
-    nav.innerHTML=items.map(([key,icon,label])=>'<button type="button" data-nav-section="'+key+'" aria-pressed="'+(key==='all')+'"><span class="nav-icon" aria-hidden="true">'+icon+'</span><span>'+label+'</span></button>').join('');
-    document.body.appendChild(nav);
-    const groups={earth:new Set(['earth','geology','disasters','ecology','oceans']),weather:new Set(['weather','ecology','history']),space:new Set(['space']),transport:new Set(['transport']),energy:new Set(['energy'])};
-    function openSection(key){
-      const categoryButton=toolbar?.querySelector('[data-category="'+key+'"]');
-      if(categoryButton){categoryButton.click();return;}
-      // Keep map visible and synchronize both navigation rows for the "All" view.
-      document.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category==='all'));
-      grid.querySelectorAll('[data-module]').forEach(el=>{el.hidden=false;});
-      nav.querySelectorAll('button').forEach(b=>{const active=b.dataset.navSection===key;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
-      state.selectedCategory=key;
-      if(state.map)setTimeout(()=>state.map.invalidateSize({pan:false}),100);
-    }
-    nav.addEventListener('click',e=>{const b=e.target.closest('[data-nav-section]');if(b)openSection(b.dataset.navSection);});
-    document.getElementById('mobileLocate')?.addEventListener('click',locateUser);
-    document.getElementById('mobileReset')?.addEventListener('click',()=>{if(state.map)state.map.setView([20,0],2);state.location=null;text('selectedCoords','GLOBAL VIEW');text('mobileSelectedCoords','GLOBAL VIEW');});
-    const syncCoords=()=>{const source=document.getElementById('selectedCoords'),target=document.getElementById('mobileSelectedCoords');if(source&&target){const observer=new MutationObserver(()=>target.textContent=source.textContent);observer.observe(source,{childList:true,subtree:true,characterData:true});target.textContent=source.textContent;}};
-    syncCoords();
+    // No persistent bottom navigation: categories are selected from the top filter row.
+    const earthButton=toolbar?.querySelector('[data-category="earth"]');
+    if(earthButton)earthButton.click();
     window.addEventListener('resize',()=>{if(state.map)state.map.invalidateSize({pan:false});},{passive:true});
-    openSection('earth');
   }
   function start(){setupControls();setupMobileNavigation();initMap();setClock();setInterval(setClock,1000);refreshAll();setInterval(()=>{Promise.allSettled([loadQuakes(),loadEvents(),loadISS(),loadWeather(),loadAir(),loadMarine(),loadSpaceWeather()]);},5*60*1000);setInterval(loadNEO,30*60*1000);setInterval(loadHistory,60*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
