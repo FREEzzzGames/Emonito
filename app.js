@@ -5,6 +5,8 @@ import { initMap as initializeMap } from './map.js?v=solar-terminator-1';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
 import { initMonitoringModules } from './modules.js?v=modules-1';
 import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
+import { initLocalZenith } from './local-zenith.js?v=ambient-local-radar-1';
+import { initAmbientEngine } from './ambient-engine.js?v=ambient-local-radar-1';
 (() => {
   const $ = id => document.getElementById(id);
   const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
@@ -475,6 +477,8 @@ import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
     safe('map',()=>initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES}));
     safe('new monitoring modules',()=>initMonitoringModules({state}));
     safe('planet explorer',()=>initPlanetExplorer({state}));
+    safe('local zenith',()=>initLocalZenith({state, fetchJson, SOURCES, text, fmt, $status}));
+    safe('ambient engine',()=>initAmbientEngine());
     safe('default category',()=>document.querySelector('[data-category="earth"]')?.click());
     safe('clock',()=>{setClock();setInterval(()=>safe('clock tick',setClock),1000);});
     safe('data refresh',()=>{
