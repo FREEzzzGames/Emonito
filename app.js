@@ -8,6 +8,7 @@ import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
 import { initLocalZenith } from './local-zenith.js?v=ambient-local-radar-1';
 import { initAmbientEngine } from './ambient-engine.js?v=ambient-local-radar-1';
 import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-intercept-1';
+import { initEarthWatch } from './earth-watch.js?v=earth-watch-1';
 (() => {
   const $ = id => document.getElementById(id);
   const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
@@ -484,6 +485,7 @@ import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-int
     safe('local zenith',()=>initLocalZenith({state, fetchJson, SOURCES, text, fmt, $status}));
     safe('ambient engine',()=>initAmbientEngine());
     safe('satellite intercept',()=>initSatelliteIntercept({state}));
+    safe('environment and infrastructure watch',()=>initEarthWatch({state}));
     safe('default category',()=>document.querySelector('[data-category="earth"]')?.click());
     safe('clock',()=>{setClock();setInterval(()=>safe('clock tick',setClock),1000);});
     safe('data refresh',()=>{
