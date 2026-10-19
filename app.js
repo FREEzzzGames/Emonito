@@ -77,8 +77,27 @@ import { setupMobileCollapsibles } from './ui.js';
   async function loadNEO(){
     $status('neoStatus','LOADING');
     const start=new Date().toISOString().slice(0,10),end=new Date(Date.now()+86400000).toISOString().slice(0,10);
-    try{const d=await fetchJson('https://api.nasa.gov/neo/rest/v1/feed?start_date='+start+'&end_date='+end+'&api_key=DEMO_KEY');const list=Object.values(d.near_earth_objects||{}).flat();text('neoCount',list.length);const sorted=list.sort((a,b)=>(a.close_approach_data?.[0]?.miss_distance?.kilometers||Infinity)-(b.close_approach_data?.[0]?.miss_distance?.kilometers||Infinity));setList('neoList',sorted.slice(0,6).map(n=>{const a=n.close_approach_data?.[0]||{};return makeRow(n.name,'Closest approach '+(a.close_approach_date_full||a.close_approach_date||'unknown')+' · '+(n.is_potentially_hazardous_asteroid?'potentially hazardous':'no NASA hazard flag'),a.miss_distance?.kilometers?fmt(Number(a.miss_distance.kilometers)/1000000,3)+' million km':'—',n.nasa_jpl_url)}),'No NEO records returned.');$status('neoStatus','LIVE · NASA DEMO KEY','ok');}
-    catch(e){text('neoCount','—');$status('neoStatus','LIMITED / UNAVAILABLE','error');setList('neoList',[],'NASA NEO API unavailable or DEMO_KEY rate-limited. No substitute values shown.');}
+    // JPL CAD is a public, keyless NASA endpoint; unlike NeoWs DEMO_KEY it avoids the shared demo-key quota.
+    const url='https://ssd-api.jpl.nasa.gov/cad.api?date-min='+start+'&date-max='+end+'&dist-max=0.05&sort=dist&limit=20&fullname=true';
+    try{
+      const d=await fetchJson(url,15000);
+      if(d.code||!Array.isArray(d.data))throw new Error(d.message||'Unexpected JPL CAD response');
+      const fields=d.fields||[],idx=Object.fromEntries(fields.map((name,i)=>[name,i]));
+      const list=d.data.map(row=>({
+        name:row[idx.des]||row[idx.fullname]||'Unidentified object',
+        date:row[idx.cd]||'Date unavailable',
+        distance: Number(row[idx.dist]),
+        velocity:Number(row[idx.v_rel]),
+        designation:row[idx.des]||'',
+        id:row[idx.des]||''
+      })).filter(o=>Number.isFinite(o.distance)).sort((a,b)=>a.distance-b.distance);
+      text('neoCount',list.length);
+      setList('neoList',list.slice(0,6).map(n=>makeRow(n.name,'Closest approach '+n.date+' · JPL close-approach data',Number.isFinite(n.distance)?fmt(n.distance,5)+' au'+(Number.isFinite(n.velocity)?' · '+fmt(n.velocity,1)+' km/s':''):'—','https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr='+encodeURIComponent(n.id))),'JPL returned no close-approach records for this period.');
+      $status('neoStatus','LIVE · NASA JPL CAD','ok');
+    }catch(e){
+      text('neoCount','—');$status('neoStatus','UNAVAILABLE','error');
+      setList('neoList',[],'NASA JPL close-approach service did not return usable data. No substitute values shown.');
+    }
   }
   async function loadTransport(){
     $status('transportStatus','LOADING');
@@ -96,9 +115,40 @@ import { setupMobileCollapsibles } from './ui.js';
   }
   async function loadAircraft(){
     $status('aircraftStatus','LOADING');
-    if(!state.map||state.map.getZoom()<5){text('aircraftCount','Zoom in');$status('aircraftStatus','ZOOM TO LEVEL 5+');setList('aircraftList',[],'Zoom to a regional view, then query transport. OpenSky has coverage and access limitations.');return;}
-    try{const b=state.map.getBounds();const url=SOURCES.openSky+'?lamin='+Math.max(-85,b.getSouth())+'&lomin='+Math.max(-180,b.getWest())+'&lamax='+Math.min(85,b.getNorth())+'&lomax='+Math.min(180,b.getEast());const d=await fetchJson(url,16000);const states=d.states||[];text('aircraftCount',states.length);const group=state.layers.aircraft;if(group){group.clearLayers();states.forEach(a=>{const lon=a[5],lat=a[6];if(!Number.isFinite(lat)||!Number.isFinite(lon)||a[8])return;const label=String(a[1]||a[0]||'Aircraft').trim();L.circleMarker([lat,lon],{radius:3,color:'#d9ff45',fillColor:'#d9ff45',fillOpacity:.85,weight:1}).bindPopup(popupLink(label,'Altitude '+(Number.isFinite(a[7])?fmt(a[7]/1000,1)+' km':'—')+' · speed '+(Number.isFinite(a[9])?fmt(a[9],0)+' m/s':'—'),'https://opensky-network.org/')).addTo(group);});}setList('aircraftList',states.slice(0,8).map(a=>makeRow(String(a[1]||a[0]||'Aircraft').trim(),(a[2]||'Origin unavailable')+' · '+(Number.isFinite(a[6])?fmt(a[6],2)+', '+fmt(a[5],2):'Position unavailable'),Number.isFinite(a[7])?fmt(a[7]/1000,1)+' km':'—','https://opensky-network.org/')),'No aircraft states returned for this view.');$status('aircraftStatus','LIVE · OPENSKY','ok');}
-    catch(e){text('aircraftCount','—');$status('aircraftStatus','UNAVAILABLE / RESTRICTED','error');setList('aircraftList',[],'OpenSky API is unavailable, CORS-blocked, or requires authenticated access.');}
+    if(!state.map||state.map.getZoom()<5){
+      text('aircraftCount','Zoom in');$status('aircraftStatus','ZOOM TO LEVEL 5+');
+      setList('aircraftList',[],'Zoom to a regional view before querying live aircraft. Coverage depends on public receiver data.');
+      return;
+    }
+    try{
+      const center=state.map.getCenter();
+      // ADS-B.lol exposes a public regional endpoint without the browser-side OpenSky authentication/CORS failure.
+      const url='https://api.adsb.lol/v2/lat/'+encodeURIComponent(center.lat)+'/lon/'+encodeURIComponent(center.lng)+'/dist/135';
+      const d=await fetchJson(url,16000);
+      if(!Array.isArray(d.ac))throw new Error('Unexpected ADS-B response');
+      const aircraft=d.ac.filter(a=>Number.isFinite(Number(a.lat))&&Number.isFinite(Number(a.lon)));
+      text('aircraftCount',aircraft.length);
+      const group=state.layers.aircraft;
+      if(group){
+        group.clearLayers();
+        aircraft.forEach(a=>{
+          const label=String(a.flight||a.hex||a.r||'Aircraft').trim();
+          const altitude=Number(a.alt_baro);
+          const speed=Number(a.gs);
+          L.circleMarker([Number(a.lat),Number(a.lon)],{radius:3,color:'#d9ff45',fillColor:'#d9ff45',fillOpacity:.85,weight:1})
+            .bindPopup(popupLink(label,'Altitude '+(Number.isFinite(altitude)?fmt(altitude/1000,1)+' km':'—')+' · ground speed '+(Number.isFinite(speed)?fmt(speed,0)+' kt':'—'),'https://api.adsb.lol/'))
+            .addTo(group);
+        });
+      }
+      setList('aircraftList',aircraft.slice(0,8).map(a=>{
+        const altitude=Number(a.alt_baro),speed=Number(a.gs);
+        return makeRow(String(a.flight||a.hex||a.r||'Aircraft').trim(),(a.t||'Aircraft')+' · '+fmt(a.lat,2)+', '+fmt(a.lon,2),Number.isFinite(altitude)?fmt(altitude/1000,1)+' km':'—','https://api.adsb.lol/');
+      }),'No aircraft reported by the public ADS-B feed in this region.');
+      $status('aircraftStatus','LIVE · ADS-B.LOL','ok');
+    }catch(e){
+      text('aircraftCount','—');$status('aircraftStatus','UNAVAILABLE','error');
+      setList('aircraftList',[],'Public ADS-B feed unavailable or rate-limited. Retry later; no aircraft are simulated.');
+    }
   }
   function parseCSVLine(line){
     const cells=[];let value='',quoted=false;
