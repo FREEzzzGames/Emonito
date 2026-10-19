@@ -137,3 +137,33 @@
   .mobile-category-tabs::-webkit-scrollbar{display:none}
   .mobile-category-tabs button{flex:0 0 auto!important;width:auto;min-width:max-content;white-space:nowrap;line-height:1.2}
 }
+
+
+/* Map controls, data-source retry affordances, and time filtering */
+.map-tools-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 10px;border-top:1px solid var(--line);background:#0b0f11}
+.map-tools-row>button,.timeline-control select{min-height:38px;border:1px solid #35454d;border-radius:7px;background:#151d21;color:var(--text);padding:8px 11px;font-size:11px}
+.layer-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex-basis:100%;padding:10px;border:1px solid #344149;border-radius:8px;background:#101619}
+.layer-menu[hidden]{display:none!important}
+.layer-menu label{display:flex;align-items:center;gap:8px;min-height:34px;font-size:12px;color:#dce5e9}
+.layer-menu input{width:17px;height:17px;accent-color:var(--cyan);flex:none}
+.timeline-control{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.timeline-control select{max-width:145px}
+.status-actions{display:inline-flex;align-items:center;gap:4px;margin-left:6px;vertical-align:middle}
+.status-actions button{min-height:25px;padding:3px 6px;border-radius:5px;font-size:10px;line-height:1.2;white-space:nowrap}
+.status-actions .status-info{width:25px;padding:2px;border-color:#52636b;color:var(--cyan)}
+.status-actions .status-retry{border-color:#257e9b;color:#73dfff;background:#10262e}
+.map-popup{min-width:190px;max-width:260px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.map-popup strong{display:block;color:#6bdfff;font-size:13px;margin-bottom:6px}
+.map-popup p{margin:5px 0;color:#e5edf0;overflow-wrap:anywhere}
+.map-popup button{min-height:34px;padding:6px 9px;border:1px solid #267f9e;border-radius:6px;background:#102b35;color:#72e0ff}
+@media(max-width:760px){
+  .map-tools-row{align-items:stretch;padding:8px;gap:7px}
+  .map-tools-row>button{flex:1;min-width:0;min-height:42px;font-size:12px}
+  .timeline-control{flex:1 1 100%;justify-content:space-between;font-size:12px}
+  .timeline-control select{max-width:none;flex:1}
+  .layer-menu{grid-template-columns:1fr;gap:5px}
+  .layer-menu label{min-height:40px;font-size:14px}
+  .status-actions{display:flex;flex-wrap:wrap;margin:5px 0 0}
+  .status-actions button{min-height:32px;font-size:11px}
+  .map-panel>.head{flex-wrap:wrap}
+}
