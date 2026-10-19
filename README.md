@@ -21,6 +21,15 @@ A static, GitHub Pages-hosted global monitoring dashboard using public data sour
 
 GitHub Actions deploys the repository root to GitHub Pages on every push to `main`. In **Settings → Pages**, set **Build and deployment → Source** to **GitHub Actions**.
 
+## Current implementation status
+
+- Interactive Leaflet map with OpenStreetMap basemap and optional NASA GIBS satellite/cloud layers.
+- Live USGS earthquake markers and NASA EONET event markers, where source requests succeed.
+- ISS current position plus a sampled trail collected during this browser session; the trail is not a reconstructed historical orbit.
+- Weather and air-quality values, Open-Meteo marine wave model, NOAA planetary K-index, NASA near-Earth object feed, historical weather charts, and regional OpenStreetMap/OpenSky queries.
+- Each source reports an unavailable or restricted state when its request fails. The static validation workflow checks JavaScript syntax and literal DOM IDs.
+- Browser runtime, external API availability, and successful Pages deployment still need confirmation from the GitHub Actions run and a real browser session.
+
 ## Data and security notes
 
 - This is a static client-side app; no API secrets are embedded.
