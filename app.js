@@ -283,8 +283,8 @@ import { setupMobileCollapsibles } from './ui.js';
     window.addEventListener('resize',resizeMap,{passive:true});
     window.addEventListener('orientationchange',resizeMap,{passive:true});
 
-    const fullMapButton=$('fullMapMode'),metricsButton=$('metricsMode'),mapFab=$('mapFab');
-    const mapPanel=document.querySelector('.map-panel');
+    const fullMapButton=$('fullMapMode');
+    const metricsButton=$('metricsMode');
     const prefersReduced=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const setMode=(mode)=>{
       document.body.classList.toggle('map-fullscreen',mode==='map');
@@ -294,15 +294,9 @@ import { setupMobileCollapsibles } from './ui.js';
       if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
       if(mode==='metrics')document.querySelector('.side')?.scrollIntoView({block:'start',behavior:prefersReduced()?'auto':'smooth'});
       if(mode==='map')window.scrollTo({top:0,behavior:prefersReduced()?'auto':'smooth'});
-      updateMapFab();
     };
     fullMapButton?.addEventListener('click',()=>setMode(document.body.classList.contains('map-fullscreen')?'normal':'map'));
     metricsButton?.addEventListener('click',()=>setMode(document.body.classList.contains('dashboard-mode')?'normal':'metrics'));
-    mapFab?.addEventListener('click',()=>{
-      setMode('normal');
-      mapPanel?.scrollIntoView({block:'start',behavior:prefersReduced()?'auto':'smooth'});
-      if(state.map)requestAnimationFrame(()=>state.map.invalidateSize({pan:false}));
-    });
 
     const metricTargets={
       quakeCount:'#quakeList',
@@ -335,20 +329,6 @@ import { setupMobileCollapsibles } from './ui.js';
       });
     });
 
-    let rafPending=false;
-    function updateMapFab(){
-      if(!mapFab||document.body.classList.contains('map-fullscreen'))return;
-      const rect=mapPanel?.getBoundingClientRect();
-      const shouldShow=!!rect&&(rect.bottom<72||rect.top>window.innerHeight);
-      mapFab.classList.toggle('is-visible',shouldShow);
-    }
-    window.addEventListener('scroll',()=>{
-      if(rafPending)return;
-      rafPending=true;
-      requestAnimationFrame(()=>{rafPending=false;updateMapFab();});
-    },{passive:true});
-    window.addEventListener('resize',updateMapFab,{passive:true});
-    updateMapFab();
   }
 
   // Onboarding is an isolated UI layer; it never owns data fetching or map state.
