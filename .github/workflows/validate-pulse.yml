@@ -1,14 +1,12 @@
-name: Validate PULSE
+name: Validate EMONITO maps and data modules
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -18,13 +16,49 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: node --check pulse.js
-      - name: Check required dashboard hooks
-        shell: bash
         run: |
-          set -euo pipefail
-          for id in clock refresh sourceState updatedAt interests search viewEyebrow viewTitle viewDescription notice featureGrid feedCount feedList trendList resetPrefs; do
-            grep -q "id=\"$id\"" index.html || { echo "Missing DOM id: $id"; exit 1; }
-          done
-          grep -q 'href="styles.css?v=pulse-1"' index.html
-          grep -q 'src="pulse.js?v=pulse-1"' index.html
+          for file in app.js config.js api.js map.js poi-layers.js ui.js modules.js planet-explorer.js local-zenith.js ambient-engine.js satellite-intercept.js earth-watch.js enhancements.js workers/emonito-api.js eslint.config.js; do node --check "$file"; done
+      - name: ESLint
+        run: npx --yes eslint@9 --config eslint.config.js app.js config.js api.js map.js poi-layers.js ui.js modules.js planet-explorer.js local-zenith.js ambient-engine.js
+      - name: Stylelint
+        run: npx --yes stylelint@16 --config stylelint.config.js styles.css
+      - name: Validate HTML structure and referenced element IDs
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re, sys
+
+          class Parser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = set()
+                  self.errors = []
+              def handle_starttag(self, tag, attrs):
+                  for key, value in attrs:
+                      if key == 'id':
+                          if value in self.ids:
+                              self.errors.append('duplicate id: ' + value)
+                          self.ids.add(value)
+
+          html = Path('index.html').read_text()
+          parser = Parser()
+          parser.feed(html)
+          parser.close()
+          js = Path('app.js').read_text()
+          patterns = [
+              r"\$\(['\"]([A-Za-z][A-Za-z0-9_-]*)['\"]\)",
+              r"(?:\$status|text|setList)\(['\"]([A-Za-z][A-Za-z0-9_-]*)['\"]"
+          ]
+          refs = set()
+          for pattern in patterns:
+              refs.update(re.findall(pattern, js))
+          # These IDs are created by setupMobileNavigation() at runtime, not in static HTML.
+          dynamic_ids = {'mobileSelectedCoords', 'mobileLocate', 'mobileReset'}
+          missing = sorted(refs - parser.ids - dynamic_ids)
+          if parser.errors or missing:
+              print('HTML errors:', parser.errors)
+              print('Missing element IDs:', missing)
+              sys.exit(1)
+          print(f'HTML parsed; {len(parser.ids)} unique IDs; all {len(refs)} literal JS ID references exist.')
+          PY
