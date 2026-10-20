@@ -33,18 +33,20 @@ export function initMap(deps) {
   }
   if (!Leaflet) {
     $status('mapStatus', 'ЗАГРУЗКА БИБЛИОТЕКИ КАРТЫ…', 'loading');
-    ensureLeaflet().then((loaded) => {
+    return ensureLeaflet().then((loaded) => {
       if (loaded) {
         leafletFallbackPromise = null;
-        initMap(deps);
-      } else {
-        $status('mapStatus', 'MAP LIBRARY FAILED · CDN UNAVAILABLE', 'error');
+        return initMap(deps);
       }
-    }).catch((error) => {
-      console.error('[EMONITO map] Leaflet fallback failed:', error);
+      const error = new Error('Leaflet unavailable from primary and fallback CDNs');
       $status('mapStatus', 'MAP LIBRARY FAILED · CDN UNAVAILABLE', 'error');
+      console.error('[EMONITO map] Leaflet fallback failed:', error);
+      throw error;
+    }).catch((error) => {
+      $status('mapStatus', 'MAP LIBRARY FAILED · CDN UNAVAILABLE', 'error');
+      console.error('[EMONITO map] Leaflet fallback failed:', error);
+      throw error;
     });
-    return null;
   }
 
   const map = Leaflet.map(container, {
