@@ -7,7 +7,8 @@ const LAYER_CONFIG = {
 };
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter'
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.nchc.org.tw/api/interpreter'
 ];
 const MAX_FEATURES = 180;
 
@@ -142,9 +143,9 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
       status.tabIndex = 0;
       status.setAttribute('role', 'button');
       const retry = () => { if (input?.checked) loadLayer(key); };
-      status.addEventListener('click', retry);
+      status.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); retry(); });
       status.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); retry(); }
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); retry(); }
       });
     }
     input?.addEventListener('change', () => {
