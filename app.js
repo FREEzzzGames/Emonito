@@ -1,7 +1,7 @@
 /* EMONITO — open-data monitoring dashboard. No secrets are embedded. */
 import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
 import { createApi } from './api.js?v=api-rewrite-1';
-import { initMap as initializeMap } from './map.js?v=leaflet-fallback-2';
+import { initMap as initializeMap } from './map.js?v=async-map-chain-1';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
 import { initMonitoringModules } from './modules.js?v=modules-1';
 import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
@@ -480,13 +480,28 @@ import { initEnhancements } from './enhancements.js?v=geo-ambient-2';
     safe('controls',setupControls);
     safe('mobile navigation',setupMobileNavigation);
     safe('onboarding',initOnboarding);
-    safe('map',()=>initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES}));
-    safe('new monitoring modules',()=>initMonitoringModules({state}));
-    safe('planet explorer',()=>initPlanetExplorer({state}));
-    safe('local zenith',()=>initLocalZenith({state, fetchJson, SOURCES, text, fmt, $status}));
+    const mapReady = safe('map',()=>initializeMap({state, $, $status, text, fmt, esc, fetchJson, locateUser, loadWeather, loadAir, loadMarine, loadHistory, SOURCES}));
+    // Modules that draw on the map must wait for asynchronous Leaflet recovery.
+    // Otherwise they observe state.map === null once and remain permanently uninitialized.
+    Promise.resolve(mapReady).then((map) => {
+      if (!map || !state.map) throw new Error('Map initialization did not produce a map instance');
+      safe('new monitoring modules',()=>initMonitoringModules({state}));
+      safe('planet explorer',()=>initPlanetExplorer({state}));
+      safe('local zenith',()=>initLocalZenith({state, fetchJson, SOURCES, text, fmt, $status}));
+      safe('satellite intercept',()=>initSatelliteIntercept({state}));
+      safe('environment and infrastructure watch',()=>initEarthWatch({state}));
+      window.dispatchEvent(new CustomEvent('emonito:map-ready'));
+    }).catch((error) => {
+      console.error('[EMONITO startup] map-dependent modules not initialized:', error);
+      ['maritimeStatus','satelliteStatus','radioStatus','auroraStatus','nightStatus','satelliteInterceptStatus','earthWatchStatus','localZenithStatus'].forEach(id => {
+        const el = $(id);
+        if (el && /ОЖИДАНИЕ|INITIALIZING|NOT LOADED/i.test(el.textContent)) {
+          el.textContent = 'НЕДОСТУПНО · ПРОВЕРЬТЕ СЕТЬ';
+          el.className = 'status error';
+        }
+      });
+    });
     safe('ambient engine',()=>initAmbientEngine());
-    safe('satellite intercept',()=>initSatelliteIntercept({state}));
-    safe('environment and infrastructure watch',()=>initEarthWatch({state}));
     safe('geo-inspector, favorites, presets and ambient mode',()=>initEnhancements({state}));
     safe('default category',()=>document.querySelector('[data-category="earth"]')?.click());
     safe('clock',()=>{setClock();setInterval(()=>safe('clock tick',setClock),1000);});
