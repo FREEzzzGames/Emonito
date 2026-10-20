@@ -87,6 +87,7 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
         marker.bindPopup('<div class="map-popup"><strong>' + escapeHtml(name) + '</strong><p>' + escapeHtml(detail) + '</p><p>' + lat.toFixed(5) + ', ' + lon.toFixed(5) + '</p><a href="' + osmUrl + '" target="_blank" rel="noopener noreferrer">Источник OpenStreetMap ↗</a></div>');
         marker.on('click', () => {
           state.location = { latitude: lat, longitude: lon };
+          window.dispatchEvent(new CustomEvent('emonito:point-selected', { detail: { latitude: lat, longitude: lon, source: 'poi' } }));
           text('selectedCoords', lat.toFixed(3) + '°, ' + lon.toFixed(3) + '°');
           text('mobileSelectedCoords', lat.toFixed(3) + '°, ' + lon.toFixed(3) + '°');
           const follow = $('mapFollow');
@@ -112,6 +113,7 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'poi-follow'; button.textContent = 'К ТОЧКЕ';
             button.addEventListener('click', () => {
               state.location = { latitude: item.lat, longitude: item.lon };
+              window.dispatchEvent(new CustomEvent('emonito:point-selected', { detail: { latitude: item.lat, longitude: item.lon, source: 'poi-list' } }));
               map.flyTo([item.lat, item.lon], Math.max(map.getZoom(), 15), { duration: 0.7 });
               text('selectedCoords', item.lat.toFixed(3) + '°, ' + item.lon.toFixed(3) + '°');
               text('mobileSelectedCoords', item.lat.toFixed(3) + '°, ' + item.lon.toFixed(3) + '°');
