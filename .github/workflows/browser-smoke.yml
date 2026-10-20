@@ -42,7 +42,13 @@ jobs:
               bodyStart: document.body.innerText.slice(0, 240)
             }))));
             try {
-              await page.waitForSelector('#map .leaflet-pane', { timeout: 30000 });
+              await page.waitForFunction(() => {
+                const gl = document.querySelector('#mapLibreMap canvas.maplibregl-canvas');
+                const leafletTiles = document.querySelector('#map .leaflet-tile-loaded');
+                const glVisible = gl && gl.getBoundingClientRect().width > 0 && gl.getBoundingClientRect().height > 0;
+                const leafletVisible = leafletTiles && leafletTiles.getBoundingClientRect().width > 0 && leafletTiles.getBoundingClientRect().height > 0;
+                return glVisible || leafletVisible;
+              }, { timeout: 30000 });
             } catch (error) {
               console.log('MAP_INIT_DIAGNOSTICS', JSON.stringify({ pageErrors, consoleErrors, failedRequests }));
               throw error;
@@ -82,7 +88,7 @@ jobs:
             await page.locator('[data-category="weather"]').click();
             if (await page.locator('#environmentWatch').evaluate(el => el.classList.contains('category-screen-hidden'))) throw new Error('Weather category did not reveal environment panel');
             if (pageErrors.length) throw new Error('Browser runtime errors: ' + pageErrors.join(' | '));
-            console.log('PASS: published page, mobile map, geo-inspector, layer menu, category navigation and ambient mode.');
+            console.log('PASS: published map basemap (Leaflet tiles or MapLibre canvas), geo-inspector, layer menu, category navigation and ambient mode.');
           } finally {
             await browser.close();
           }
