@@ -10,7 +10,7 @@ export function initEarthWatch({ state }) {
   const get = async (url) => {
     let requestUrl = url; let route = null; let source; let base = '';
     try { source = new URL(url); } catch {}
-    try { base = (localStorage.getItem('emonito:edge-api-base') || '').trim().replace(/\\/$/, ''); } catch {}
+    try { base = (localStorage.getItem('emonito:edge-api-base') || '').trim().replace(/\/$/, ''); } catch {}
     if (base && source) {
       if (source.hostname === 'services.swpc.noaa.gov' && source.pathname.includes('xrays-6-hour')) route = 'xray';
       else if (source.hostname === 'services.swpc.noaa.gov' && source.pathname.includes('/products/alerts.json')) route = 'alerts';
