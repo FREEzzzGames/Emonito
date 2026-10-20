@@ -110,7 +110,23 @@ export function initMap(deps) {
     if (mapLibreContainer) mapLibreContainer.hidden = !useMapLibre;
     if (mapLibreContainer) mapLibreContainer.style.display = useMapLibre ? 'block' : 'none';
     container.classList.toggle('maplibre-overlay-active', useMapLibre);
-    if (map.getPane('tilePane')) map.getPane('tilePane').style.display = useMapLibre ? 'none' : '';
+    const tilePane = map.getPane('tilePane');
+    const imageryMode = $('imageryMode')?.value || 'street';
+    if (useMapLibre) {
+      map.removeLayer(base);
+      if (imageryMode === 'street') {
+        map.removeLayer(satellite);
+        map.removeLayer(clouds);
+        if (tilePane) tilePane.style.display = 'none';
+      } else {
+        map.removeLayer(imageryMode === 'satellite' ? clouds : satellite);
+        (imageryMode === 'satellite' ? satellite : clouds).addTo(map);
+        if (tilePane) tilePane.style.display = '';
+      }
+    } else {
+      base.addTo(map);
+      if (tilePane) tilePane.style.display = '';
+    }
     if (mapEngineMapLibre) {
       mapEngineMapLibre.classList.toggle('active', useMapLibre);
       mapEngineMapLibre.setAttribute('aria-pressed', String(useMapLibre));
@@ -186,6 +202,23 @@ export function initMap(deps) {
   satellite.on('tileerror', () => $status('mapStatus', 'NASA IMAGERY UNAVAILABLE', 'error'));
   clouds.on('tileload', () => $status('mapStatus', 'CLOUD LAYER LOADED', 'ok'));
   clouds.on('tileerror', () => $status('mapStatus', 'CLOUD LAYER UNAVAILABLE', 'error'));
+
+  // In MapLibre mode, imagery overlays are rendered in Leaflet's transparent
+  // tile pane above the GL basemap. The normal OSM Leaflet base stays hidden.
+  $('imageryMode')?.addEventListener('change', () => {
+    if (mapEngine !== 'maplibre') return;
+    const mode = $('imageryMode').value;
+    const tilePane = map.getPane('tilePane');
+    map.removeLayer(base);
+    map.removeLayer(satellite);
+    map.removeLayer(clouds);
+    if (mode === 'street') {
+      if (tilePane) tilePane.style.display = 'none';
+    } else {
+      (mode === 'satellite' ? satellite : clouds).addTo(map);
+      if (tilePane) tilePane.style.display = '';
+    }
+  });
 
   const solarTerminator = Leaflet.polyline([], {
     color: '#58d9ff', weight: 2, opacity: 0.95, dashArray: '5 5',
