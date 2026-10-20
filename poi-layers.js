@@ -131,6 +131,18 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
 
   for (const key of Object.keys(LAYER_CONFIG)) {
     const input = document.querySelector('[data-layer-toggle="' + key + '"]');
+    const status = $(key + 'Status');
+    if (status) {
+      status.title = 'Статус источника. Нажмите, чтобы повторить запрос после ошибки.';
+      status.style.cursor = 'pointer';
+      status.tabIndex = 0;
+      status.setAttribute('role', 'button');
+      const retry = () => { if (input?.checked) loadLayer(key); };
+      status.addEventListener('click', retry);
+      status.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); retry(); }
+      });
+    }
     input?.addEventListener('change', () => {
       if (input.checked) {
         layerGroups[key].addTo(map);
@@ -138,6 +150,7 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
       } else {
         map.removeLayer(layerGroups[key]);
         pending.get(key)?.abort();
+        $status(key + 'Status', 'ВЫКЛЮЧЕН');
       }
     });
   }
