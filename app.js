@@ -9,7 +9,7 @@ import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
 import { initLocalZenith } from './local-zenith.js?v=ambient-local-radar-1';
 import { initAmbientEngine } from './ambient-engine.js?v=ambient-local-radar-1';
 import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-intercept-1';
-import { initEarthWatch } from './earth-watch.js?v=earth-watch-5';
+import { initEarthWatch } from './earth-watch.js?v=unified-point-infra-1';
 import { initEnhancements } from './enhancements.js?v=ambient-sync-2';
 (() => {
   const $ = id => document.getElementById(id);
@@ -78,8 +78,8 @@ import { initEnhancements } from './enhancements.js?v=ambient-sync-2';
   }
   async function loadSpaceWeather(){
     $status('spaceStatus','LOADING');
-    try{const d=await fetchJson(SOURCES.swpc);const rows=Array.isArray(d)?d:[];const values=rows.slice(1).map(r=>({time:r[0],kp:Number(r[1])})).filter(r=>Number.isFinite(r.kp));const last=values[values.length-1];text('kpValue',last?fmt(last.kp,1):'—');text('kpTime',last?last.time:'No recent index');setList('solarList',values.slice(-8).reverse().map(v=>makeRow('Planetary K-index',v.time,'Kp '+fmt(v.kp,1))),'NOAA returned no K-index data.');$status('spaceStatus','LIVE · NOAA SWPC','ok');}
-    catch(e){$status('spaceStatus','UNAVAILABLE','error');text('kpValue','—');setList('solarList',[],'NOAA SWPC unavailable: '+e.message);}
+    try{const d=await fetchJson(SOURCES.swpc);const rows=Array.isArray(d)?d:[];const values=rows.slice(1).map(r=>({time:r[0],kp:Number(r[1])})).filter(r=>Number.isFinite(r.kp));const last=values[values.length-1];text('kpValue',last?fmt(last.kp,1):'—');text('kpValueWatch',last?'Kp '+fmt(last.kp,1):'Kp недоступен');text('kpTime',last?last.time:'No recent index');setList('solarList',values.slice(-8).reverse().map(v=>makeRow('Planetary K-index',v.time,'Kp '+fmt(v.kp,1))),'NOAA returned no K-index data.');$status('spaceStatus','LIVE · NOAA SWPC','ok');}
+    catch(e){$status('spaceStatus','UNAVAILABLE','error');text('kpValue','—');text('kpValueWatch','Kp недоступен');setList('solarList',[],'NOAA SWPC unavailable: '+e.message);}
     try{const d=await fetchJson(SOURCES.solar);const rows=Array.isArray(d)?d:[];const last=rows[rows.length-1];if(last){text('solarNumber',last['ssn']??last['sunspot number']??last['sunspot_number']??'—');text('solarDate',last['time-tag']||last.time_tag||last['Year']||'Solar cycle observation');}}catch(e){text('solarNumber','—');text('solarDate','Solar cycle feed unavailable');}
   }
   async function loadNEO(){
