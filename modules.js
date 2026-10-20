@@ -31,14 +31,14 @@ export function initMonitoringModules({state}){
  Object.assign(state.layers,{cables:null,powerInfra:layers.powerInfra,goes:layers.goes,aurora:layers.aurora,night:layers.night});
  document.querySelectorAll('[data-info]').forEach(b=>{b.title=info[b.dataset.info]||'';b.addEventListener('click',()=>{const tip=$(b.dataset.info+'Tip');if(tip)tip.hidden=!tip.hidden;});});
  const busy=(name,on)=>document.querySelectorAll('[data-retry="'+name+'"]').forEach(b=>{b.disabled=on;b.textContent=on?'… Загрузка':'↻ Повторить';});
- document.querySelector('[data-layer-toggle="powerInfra"]')?.addEventListener('change',e=>{if(e.target.checked){if(map.getZoom()<5){map.flyTo(map.getCenter(),5,{duration:.5});map.once('moveend',loadPowerInfrastructure);}else loadPowerInfrastructure();layers.powerInfra.addTo(map);}else if(map.hasLayer(layers.powerInfra))map.removeLayer(layers.powerInfra);});
+ document.querySelector('[data-layer-toggle="powerInfra"]')?.addEventListener('change',e=>{if(e.target.checked){if(map.getZoom()<7){map.flyTo(map.getCenter(),7,{duration:.5});}else loadPowerInfrastructure();layers.powerInfra.addTo(map);}else if(map.hasLayer(layers.powerInfra))map.removeLayer(layers.powerInfra);});
  document.querySelector('[data-layer-toggle="cables"]')?.addEventListener('change',e=>{if(e.target.checked){if(layers.cables)layers.cables.addTo(map);else loadCables();}else if(layers.cables&&map.hasLayer(layers.cables))map.removeLayer(layers.cables);});
  map.on('moveend',()=>{const t=document.querySelector('[data-layer-toggle="powerInfra"]');if(t?.checked&&map.getZoom()>=5)loadPowerInfrastructure();});
 
 
  async function loadPowerInfrastructure(){
   const checkbox=document.querySelector('[data-layer-toggle="powerInfra"]');
-  if(!map||map.getZoom()<5){status('powerInfraStatus','МАСШТАБ 5+','error');return;}
+  if(!map||map.getZoom()<7){status('powerInfraStatus','МАСШТАБ 7+','error');return;}
   status('powerInfraStatus','ЗАПРОС OSM…');
   const b=map.getBounds(),bbox=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(n=>n.toFixed(5)).join(',');
   const query='[out:json][timeout:20];(node["power"~"^(plant|substation|transformer|generator)$"]('+bbox+');way["power"~"^(plant|substation|line|cable)$"]('+bbox+'););out geom center tags;';
