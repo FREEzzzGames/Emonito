@@ -711,3 +711,6 @@ body.emo-ambient-mode .map-tools-row > :not(.emo-tools){display:none!important}
   .emo-tools button { min-height:36px; padding:7px 9px; }
   .emo-inspector { left:6px; right:6px; bottom:6px; max-height:78%; }
 }
+
+/* Infrastructure overlays and unified map controls. */
+#layerMenu label.layer-option{gap:10px}#powerInfraStatus{font-size:9px}.leaflet-popup-content .map-popup a{display:inline-block;margin-top:5px}
