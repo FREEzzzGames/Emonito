@@ -1,6 +1,6 @@
 /* EMONITO — open-data monitoring dashboard. No secrets are embedded. */
 import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
-import { createApi } from './api.js?v=api-rewrite-1';
+import { createApi } from './api.js?v=cache-policy-2';
 import { initMap as initializeMap } from './map.js?v=maplibre-default-3';
 import { initPoiLayers } from './poi-layers.js?v=poi-layers-1';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
@@ -10,7 +10,7 @@ import { initLocalZenith } from './local-zenith.js?v=ambient-local-radar-1';
 import { initAmbientEngine } from './ambient-engine.js?v=ambient-local-radar-1';
 import { initSatelliteIntercept } from './satellite-intercept.js?v=satellite-intercept-1';
 import { initEarthWatch } from './earth-watch.js?v=earth-watch-5';
-import { initEnhancements } from './enhancements.js?v=geo-ambient-2';
+import { initEnhancements } from './enhancements.js?v=ambient-sync-2';
 (() => {
   const $ = id => document.getElementById(id);
   const state = { map:null, layers:{}, activeMarkers:{}, location:null, chart:null, lastUpdated:null, requests:new Map(), selectedCategory:'earth', issHistory:[], quakeFeatures:[], quakeWindowHours:24 };
