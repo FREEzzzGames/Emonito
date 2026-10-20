@@ -166,7 +166,7 @@ export function initMap(deps) {
     });
   });
 
-  const base = Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const base = Leaflet.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
@@ -339,6 +339,9 @@ export function initMap(deps) {
   window.addEventListener('orientationchange', () => {
     requestAnimationFrame(() => map.invalidateSize({ pan: false }));
   }, { passive: true });
+  // Prefer the GL basemap on first load: it has been verified to render on mobile.
+  // Leaflet remains active for markers, popups, gestures and thematic overlays.
+  if (window.maplibregl) setMapEngine('maplibre');
   $status('mapStatus', 'MAP READY · LOADING TILES', 'ok');
   return map;
 }
