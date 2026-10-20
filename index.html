@@ -1,56 +1,223 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b10">
-<meta name="description" content="PULSE — живая панель игр, спорта, музыки и современной культуры.">
-<title>PULSE — Live Culture Deck</title>
-<link rel="preconnect" href="https://site.api.espn.com">
-<link rel="preconnect" href="https://store.steampowered.com">
-<link rel="stylesheet" href="styles.css?v=pulse-1">
-<script type="module" src="pulse.js?v=pulse-1"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050607"><meta name="description" content="Emonito — глобальный мониторинг Земли по открытым научным источникам.">
+<title>EMONITO — Earth Monitor</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" onerror="this.onerror=null;this.removeAttribute('integrity');this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css" crossorigin="anonymous">
+<link rel="stylesheet" href="styles.css?v=dual-map-1">
 </head>
-<body>
-<div class="app-shell">
-<header class="topbar">
-  <a class="brand" href="#" aria-label="PULSE главная"><span class="brand-mark">P</span><span><b>PULSE</b><small>LIVE CULTURE DECK</small></span></a>
-  <div class="live-indicator"><i></i><span>OPEN CULTURE SIGNAL</span></div>
-  <div class="top-actions"><span id="clock">--:--:--</span><button id="refresh" class="icon-button" type="button" title="Обновить данные" aria-label="Обновить данные">↻</button></div>
-</header>
-<main>
-  <section class="hero">
-    <div class="hero-copy"><p class="eyebrow">YOUR WORLD. RIGHT NOW.</p><h1>Твой мир<br><span>в движении.</span></h1><p class="hero-text">Игры, спорт и культура — в одной живой панели. Без бесконечной ленты и информационного шума.</p>
-    <div class="hero-meta"><span><i class="pulse-dot"></i> <b id="sourceState">ГОТОВИМ СИГНАЛ</b></span><span id="updatedAt">Данные ещё не обновлялись</span></div></div>
-    <div class="hero-orbit" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="orbit-core">P<span>●</span></div><div class="orbit-tag tag-top">CULTURE / LIVE</div><div class="orbit-tag tag-bottom">SIGNAL DETECTED</div></div>
-  </section>
-  <nav class="main-nav" aria-label="Разделы">
-    <button class="nav-item active" data-view="now" type="button"><span>◉</span>Сейчас</button>
-    <button class="nav-item" data-view="gaming" type="button"><span>▣</span>Игры</button>
-    <button class="nav-item" data-view="sport" type="button"><span>◈</span>Спорт</button>
-    <button class="nav-item" data-view="culture" type="button"><span>♫</span>Культура</button>
-    <button class="nav-item" data-view="trends" type="button"><span>⌁</span>Trend radar</button>
-    <button class="nav-item" data-view="discover" type="button"><span>✳</span>Открыть новое</button>
-  </nav>
-  <section class="interest-bar">
-    <div><span class="section-kicker">MY SIGNAL</span><strong>Настрой свою панель</strong><small>Выбор сохраняется только в этом браузере.</small></div>
-    <div class="interest-chips" id="interests">
-      <button class="chip selected" data-interest="gaming" type="button" aria-pressed="true">🎮 Игры</button>
-      <button class="chip selected" data-interest="sport" type="button" aria-pressed="true">🏆 Спорт</button>
-      <button class="chip selected" data-interest="culture" type="button" aria-pressed="true">🎵 Культура</button>
-    </div>
-  </section>
-  <section class="content-head"><div><p class="eyebrow" id="viewEyebrow">LIVE OVERVIEW / 01</p><h2 id="viewTitle">Что происходит</h2><p id="viewDescription">События и сигналы из мира твоих интересов.</p></div><label class="search-box"><span>⌕</span><input id="search" type="search" placeholder="Найти событие или тему…" autocomplete="off" aria-label="Поиск по карточкам"></label></section>
-  <div id="notice" class="notice" role="status" aria-live="polite">Загружаем открытые источники. Если источник недоступен, это будет отмечено отдельно.</div>
-  <section id="featureGrid" class="feature-grid" aria-label="Главные события"></section>
-  <section class="lower-grid">
-    <section class="panel feed-panel"><div class="panel-head"><div><p class="section-kicker">LIVE FEED</p><h3>Свежие сигналы</h3></div><span class="panel-count" id="feedCount">0 ITEMS</span></div><div id="feedList" class="feed-list"></div></section>
-    <aside class="panel radar-panel"><div class="panel-head"><div><p class="section-kicker">TREND RADAR</p><h3>Что исследовать</h3></div><span class="radar-glyph">⌁</span></div><p class="muted">Это подборка направлений для изучения, а не рейтинг популярности. PULSE не выдаёт неподтверждённые цифры за реальные тренды.</p><div class="trend-list" id="trendList"></div><div class="source-foot">Открытые источники · ссылки ведут к первоисточникам</div></aside>
-  </section>
-  <section class="source-strip"><div><p class="section-kicker">SOURCE TRANSPARENCY</p><h3>Откуда поступают данные</h3><p>Показываем источники и не подменяем отсутствие данных выдуманными показателями.</p></div><div class="source-links"><a href="https://www.espn.com/" target="_blank" rel="noopener noreferrer">ESPN · спорт ↗</a><a href="https://store.steampowered.com/news/" target="_blank" rel="noopener noreferrer">Steam · игры ↗</a><a href="https://music.apple.com/" target="_blank" rel="noopener noreferrer">Apple Music · музыка ↗</a><a href="https://www.youtube.com/feed/trending" target="_blank" rel="noopener noreferrer">YouTube · видео ↗</a></div></section>
-</main>
-<footer><span>PULSE / LIVE CULTURE DECK</span><span>OPEN DATA · NO FAKE COUNTERS</span><button id="resetPrefs" type="button">Сбросить настройки</button></footer>
+<body><div class="shell">
+<header class="top"><div class="brand"><span class="mark" aria-hidden="true"></span><div><h1>EMONITO</h1><div class="sub">EARTH MONITORING SYSTEM / OPEN DATA</div></div></div><div class="top-right"><span><i class="dot"></i>PUBLIC SOURCES</span><span id="clock">UTC --:--:--</span><button id="refreshAll" type="button">↻ REFRESH DATA</button></div></header>
+<section class="panel map-panel" data-module="earth"><div class="head"><span class="title">01 / GEOGRAPHY + SATELLITE IMAGERY</span><div class="map-head-tools"><select id="imageryMode" aria-label="Map imagery"><option value="street">Street map</option><option value="satellite">NASA satellite layer</option><option value="clouds">Cloud-top layer</option></select><span class="status" id="mapStatus">INITIALIZING</span></div><div class="map-mode-controls" aria-label="Режим отображения"><button id="mapEngineLeaflet" class="active" type="button" aria-pressed="true">LEAFLET</button><button id="mapEngineMapLibre" type="button" aria-pressed="false">MAPLIBRE GL</button><button id="fullMapMode" type="button" aria-pressed="false">⛶ ПОЛНАЯ КАРТА</button><button id="metricsMode" type="button" aria-pressed="false">▦ МЕТРИКИ</button></div></div><div class="map-wrap"><div id="mapLibreMap" class="maplibre-map" aria-label="MapLibre GL 2D base map" hidden></div><div id="map" class="map" aria-label="Interactive geographic map"></div><div class="map-note"><div id="selectedCoords">GLOBAL VIEW</div><div>CLICK MAP TO INSPECT WEATHER / AIR QUALITY</div><button id="mapLocate" type="button">USE MY LOCATION</button> <button id="mapReset" type="button">RESET</button></div></div>
+<div class="map-tools-row">
+  <button id="layerMenuToggle" type="button" aria-expanded="false">☷ СЛОИ КАРТЫ</button>
+  <div class="layer-menu" id="layerMenu" hidden aria-label="Управление слоями">
+    <label><input type="checkbox" data-layer-toggle="quakes" checked> Землетрясения</label>
+    <label><input type="checkbox" data-layer-toggle="events" checked> Природные события</label>
+    <label><input type="checkbox" data-layer-toggle="iss" checked> МКС</label>
+    <label><input type="checkbox" data-layer-toggle="issTrail" checked> Траектория МКС</label>
+    <label><input type="checkbox" data-layer-toggle="transport"> Транспорт</label>
+    <label><input type="checkbox" data-layer-toggle="aircraft"> Самолёты</label>
+    <label><input type="checkbox" data-layer-toggle="satellite"> Спутниковая подложка</label>
+    <label><input type="checkbox" data-layer-toggle="clouds"> Облачность</label>
+    <label><input type="checkbox" data-layer-toggle="solarTerminator"> Линия дня/ночи</label>
+  </div>
+  <label class="timeline-control" for="quakeTimeline">Землетрясения
+    <select id="quakeTimeline" aria-label="Период землетрясений">
+      <option value="1">Последний час</option><option value="6">6 часов</option><option value="24" selected>24 часа</option>
+    </select>
+  </label>
 </div>
-<noscript><p class="noscript">Для работы PULSE необходимо включить JavaScript.</p></noscript>
-</body>
-</html>
+</section>
+
+<section class="intro category-intro"><div><div class="eyebrow">PLANET EARTH CONTROL DECK / 12 MONITORING DOMAINS</div><h2>Observe the living planet.</h2><p>Реальные открытые данные. Временные метки и недоступность источников показываются явно; прогнозы и архивные оценки не выдаются за прямые измерения.</p></div><div class="toolbar" aria-label="Filter monitoring domains"><button data-category="earth">EARTH</button><button data-category="weather">WEATHER</button><button data-category="space">SPACE</button><button data-category="transport">TRANSPORT</button><button data-category="energy">ENERGY</button></div></section>
+<div class="planet-explorer-toggle category-tools-toggle" data-module="earth"><div><strong>ПЛАНЕТАРНЫЙ РАДАР</strong><span>Сводка · экспедиции · история</span></div><button id="planetExplorerToggle" type="button" aria-expanded="false">Открыть инструменты +</button></div>
+<section class="planet-explorer" id="planetExplorer" data-module="earth" hidden aria-labelledby="planetExplorerTitle">
+  <div class="planet-section-head"><div><div class="eyebrow">LIVE DISCOVERY / EVIDENCE FIRST</div><h2 id="planetExplorerTitle">Планетарный радар</h2><p>Не только показатели: наблюдайте изменения, исследуйте события и проверяйте первоисточники.</p></div><button id="briefingRefresh" type="button">↻ Перечитать сводку</button></div>
+  <div class="planet-briefing panel" id="planetBriefing">
+    <div class="planet-subhead"><div><span class="planet-kicker">PLANETARY BRIEFING</span><h3>Что заслуживает внимания</h3><p>Карточки строятся по данным уже загруженных модулей. Если источник недоступен, это будет указано явно.</p></div><span class="status" id="briefingStatus">ОЖИДАНИЕ ДАННЫХ</span></div>
+    <div class="briefing-cards" id="planetBriefingCards"><p class="empty">Загружаем показатели из существующих модулей…</p></div>
+    <div class="briefing-footer"><span>Источники: существующие модули EMONITO</span><button id="planetShowChanges" type="button">Перейти к истории изменений ↓</button></div>
+  </div>
+  <div class="planet-explorer-grid">
+    <section class="panel planet-block" aria-labelledby="expeditionHeading"><div class="planet-subhead"><div><span class="planet-kicker">FIELD GUIDE</span><h3 id="expeditionHeading">Короткие экспедиции</h3><p>Пошаговые исследования реальных данных без игровых очков и выдуманных результатов.</p></div></div>
+      <div class="expedition-list" id="expeditionList"></div>
+      <div class="expedition-player" id="expeditionPlayer" hidden><div class="expedition-player-top"><span id="expeditionCounter">ШАГ 1 / 3</span><button id="expeditionClose" type="button" aria-label="Закрыть экспедицию">×</button></div><h4 id="expeditionTitle"></h4><p id="expeditionBody"></p><div class="expedition-player-actions"><button id="expeditionBack" type="button" disabled>← Назад</button><button id="expeditionNext" type="button">Следующий шаг →</button></div></div>
+    </section>
+    <section class="panel planet-block" aria-labelledby="watchHeading"><div class="planet-subhead"><div><span class="planet-kicker">MY PLANET</span><h3 id="watchHeading">Мои интересы</h3><p>Выберите темы для персональной сводки. Настройка хранится только в этом браузере.</p></div></div><div class="watch-options" id="planetWatch"></div><div class="watch-note">Это локальная настройка интерфейса. Уведомления и фоновые проверки здесь не включаются.</div></section>
+  </div>
+  <section class="panel planet-block timeline-panel" aria-labelledby="timelineHeading"><div class="planet-subhead"><div><span class="planet-kicker">CHANGE EXPLORER</span><h3 id="timelineHeading">История наблюдений</h3><p>Изменения между полученными значениями и успешные ответы источников. Время в журнале — время получения приложением, если отдельно не указано иное.</p></div><button id="timelineClear" type="button">Очистить историю</button></div><ol class="planet-timeline" id="planetTimeline"><li class="empty">История появится после первых обновлений.</li></ol></section>
+  <div class="planet-disclaimer"><strong>Важно:</strong> изменения в двух точках наблюдения не обязательно означают значимое событие или причинную связь. Проверяйте время, охват и исходный источник.</div>
+</section>
+<main class="grid">
+
+<section class="side">
+<article class="panel metric" data-module="geology"><div class="label">02 / EARTHQUAKES · 24H</div><div><div class="value" id="quakeCount">—</div><div class="detail">USGS public feed</div><div class="detail" id="quakePeak">Largest: —</div></div></article>
+<article class="panel metric" data-module="disasters"><div class="label">03 / OPEN NATURAL EVENTS</div><div><div class="value" id="eventCount">—</div><div class="detail">NASA EONET</div></div></article>
+<article class="panel metric" data-module="space"><div class="label">07 / SPACE WEATHER Kp</div><div><div class="value" id="kpValue">—</div><div class="detail" id="kpTime">NOAA SWPC</div></div></article>
+<article class="panel metric" data-module="space"><div class="label">08 / ISS POSITION</div><div><div class="value" id="issLat">—</div><div class="detail" id="issLon">Longitude —</div><div class="detail">Altitude <span id="issAlt">—</span> · <span id="issSpeed">—</span></div></div></article>
+<article class="panel metric" data-module="weather"><div class="label">02 / AIR TEMPERATURE</div><div><div class="value" id="weatherTemp">—</div><div class="detail" id="weatherFeels">Feels like —</div></div></article>
+<article class="panel metric" data-module="ecology"><div class="label">06 / EUROPEAN AQI</div><div><div class="value" id="airAQI">—</div><div class="detail">Open-Meteo air-quality model</div></div></article>
+</section>
+<section class="panel half" data-module="geology"><div class="head"><span class="title">02 / SEISMIC ACTIVITY</span><span class="status" id="quakeStatus">NOT LOADED</span></div><ul class="list" id="quakeList"><li class="empty">Loading USGS feed…</li></ul></section>
+<section class="panel half" data-module="disasters"><div class="head"><span class="title">03 / NATURAL DISASTERS + EVENTS</span><span class="status" id="eventStatus">NOT LOADED</span></div><ul class="list" id="eventList"><li class="empty">Loading NASA EONET…</li></ul></section>
+<section class="panel half" data-module="weather"><div class="head"><span class="title">02 / WEATHER · CURRENT CONDITIONS</span><span class="status" id="weatherStatus">NOT LOADED</span></div><ul class="list"><li class="data-row"><div class="row-main"><div class="row-title">Wind</div><div class="row-detail">10 m above ground</div></div><div class="row-value" id="weatherWind">—</div></li><li class="data-row"><div class="row-main"><div class="row-title">Pressure</div></div><div class="row-value" id="weatherPressure">—</div></li><li class="data-row"><div class="row-main"><div class="row-title">Humidity</div></div><div class="row-value" id="weatherHumidity">—</div></li><li class="data-row"><div class="row-main"><div class="row-title">Precipitation</div></div><div class="row-value" id="weatherRain">—</div></li><li class="data-row"><div class="row-main"><div class="row-title">Updated</div></div><div class="row-value" id="weatherUpdated">—</div></li></ul><div class="chart-wrap"><canvas id="forecastChart" aria-label="Weather forecast and recent hourly chart"></canvas></div><div class="chart-foot">Open-Meteo hourly model data · forecast + recent history</div><button id="weatherLocate" type="button">USE DEVICE LOCATION</button></section>
+<section class="panel half" data-module="ecology"><div class="head"><span class="title">06 / AIR QUALITY</span><span class="status" id="airStatus">NOT LOADED</span></div><ul class="list"><li class="data-row"><div class="row-main"><div class="row-title">PM2.5</div></div><div class="row-value" id="airPM25">—</div></li><li class="data-row"><div class="row-main"><div class="row-title">PM10</div></div><div class="row-value" id="airPM10">—</div></li><li class="data-row"><div class="row-main"><div class="row-title">Nitrogen dioxide (NO₂)</div></div><div class="row-value" id="airNO2">—</div></li><li class="data-row"><div class="row-main"><div class="row-title">Updated</div></div><div class="row-value" id="airUpdated">—</div></li></ul></section>
+<section class="panel third" data-module="space"><div class="head"><span class="title">07 / SOLAR CYCLE</span><span class="status" id="spaceStatus">NOT LOADED</span></div><ul class="list" id="solarList"><li class="empty">Loading NOAA SWPC…</li></ul><div class="data-row"><div class="row-main"><div class="row-title">Sunspot number</div><div class="row-detail" id="solarDate">Solar cycle feed</div></div><div class="row-value" id="solarNumber">—</div></div></section>
+<section class="panel third" data-module="space"><div class="head"><span class="title">08 / ISS TELEMETRY</span><span class="status" id="issStatus">NOT LOADED</span></div><ul class="list" id="issList"><li class="empty">Waiting for ISS position…</li></ul></section>
+<section class="panel third" data-module="space"><div class="head"><span class="title">08 / NEAR-EARTH OBJECTS</span><span class="status" id="neoStatus">NOT LOADED</span></div><div class="data-row"><div class="row-main"><div class="row-title">Asteroids in NASA feed</div><div class="row-detail">Today + next day · NASA DEMO_KEY</div></div><div class="row-value" id="neoCount">—</div></div><ul class="list" id="neoList"><li class="empty">Loading NASA NEO…</li></ul></section>
+<section class="panel third" data-module="transport"><div class="head"><span class="title">09 / TRANSPORT INFRASTRUCTURE</span><span class="status" id="transportStatus">NOT LOADED</span></div><div class="data-row"><div class="row-main"><div class="row-title">Map features in current view</div><div class="row-detail">Airports + rail stations · OpenStreetMap Overpass</div></div><div class="row-value" id="transportCount">—</div></div><ul class="list" id="transportList"><li class="empty">Loading transport features…</li></ul><button id="mapRefreshTransport" type="button">QUERY CURRENT MAP AREA</button><div class="data-row"><div class="row-main"><div class="row-title">Aircraft in current map bounds</div><div class="row-detail">OpenSky states · regional view required</div></div><div class="row-value" id="aircraftCount">—</div></div><div class="head"><span class="title">LIVE AIRCRAFT</span><span class="status" id="aircraftStatus">NOT LOADED</span></div><ul class="list" id="aircraftList"><li class="empty">Zoom in to query aircraft states.</li></ul></section>
+<section class="panel third" data-module="oceans"><div class="head"><span class="title">05 / OCEANS + WATER</span><span class="status" id="marineStatus">NOT LOADED</span></div><div class="data-row"><div class="row-main"><div class="row-title">Wave height</div><div class="row-detail">Open-Meteo marine model</div></div><div class="row-value" id="waveHeight">—</div></div><div class="data-row"><div class="row-main"><div class="row-title">Wave direction / period</div></div><div class="row-value"><span id="waveDirection">—</span> / <span id="wavePeriod">—</span></div></div><ul class="list" id="marineList"><li class="empty">Loading marine forecast…</li></ul><ul class="list"><li class="data-row"><div class="row-main"><a class="row-title" href="https://marine.copernicus.eu/" target="_blank" rel="noopener noreferrer">Copernicus Marine</a><div class="row-detail">Sea surface temperature, currents, waves, sea ice</div></div><div class="row-value">API</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://waterdata.usgs.gov/" target="_blank" rel="noopener noreferrer">USGS Water Data</a><div class="row-detail">Water levels and streamflow where stations exist</div></div><div class="row-value">API</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://www.ncei.noaa.gov/" target="_blank" rel="noopener noreferrer">NOAA NCEI</a><div class="row-detail">Ocean and climate archives</div></div><div class="row-value">DATA</div></li></ul></section>
+<section class="panel third" data-module="energy"><div class="head"><span class="title">10 / ENERGY SYSTEMS</span><span class="status" id="energyStatus">NOT LOADED</span></div><div class="data-row"><div class="row-main"><div class="row-title">Energy dataset</div><div class="row-detail">Historical electricity generation · Our World in Data</div></div><div class="row-value" id="energyCount">—</div></div><ul class="list" id="energyList"><li class="empty">Loading open energy data…</li></ul><div class="chart-foot">Near-real-time ENTSO-E requires an API token; no key is exposed in this client.</div></section>
+<section class="panel third" data-module="earth"><div class="head"><span class="title">11 / GEOGRAPHY + HUMAN ACTIVITY</span><span class="status">REFERENCE LAYERS</span></div><ul class="list"><li class="data-row"><div class="row-main"><a class="row-title" href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer">OpenStreetMap</a><div class="row-detail">Roads, settlements, buildings and land-use tags</div></div><div class="row-value">MAP</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://earthobservatory.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Earth Observatory</a><div class="row-detail">Land cover, night lights and environmental imagery</div></div><div class="row-value">SCIENCE</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://www.worldpop.org/" target="_blank" rel="noopener noreferrer">WorldPop</a><div class="row-detail">Population estimates and gridded demographic datasets</div></div><div class="row-value">DATA</div></li></ul></section>
+<section class="panel third" data-module="history"><div class="head"><span class="title">12 / HISTORICAL ANALYTICS</span><span class="status" id="historyStatus">NOT LOADED</span></div><div class="chart-wrap"><canvas id="historyChart" aria-label="Historical weather graph"></canvas></div><div class="chart-foot" id="historySummary">Loading daily archive data…</div></section>
+<section class="panel third" data-module="space"><div class="head"><span class="title">08 / ORBITAL DATA SOURCES</span><span class="status">CATALOG</span></div><ul class="list"><li class="data-row"><div class="row-main"><a class="row-title" href="https://celestrak.org/" target="_blank" rel="noopener noreferrer">CelesTrak</a><div class="row-detail">Orbital elements and satellite catalog (positions require propagation)</div></div><div class="row-value">TLE</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://api.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Open APIs</a><div class="row-detail">Near-Earth objects and astronomical data</div></div><div class="row-value">API</div></li><li class="data-row"><div class="row-main"><a class="row-title" href="https://www.n2yo.com/" target="_blank" rel="noopener noreferrer">N2YO</a><div class="row-detail">Satellite tracking service; check API access and terms</div></div><div class="row-value">SOURCE</div></li></ul></section>
+
+<section class="panel third monitor-module" data-module="maritime" id="moduleMaritime">
+  <div class="head"><span class="title">13 / MARITIME + SUBSEA NETWORKS</span><span class="status" id="maritimeStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="maritime" aria-label="О модуле морских кабелей">i</button><button type="button" data-retry="maritime">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="cablesToggle" data-module-layer="cables"> Кабели на карте</label></div>
+  <p class="module-description" id="maritimeMessage">Подводные магистрали и морские узлы. Сведения о судах требуют отдельного AIS-поставщика.</p>
+  <div class="module-stats"><div><span>Маршруты</span><strong id="cableCount">—</strong></div><div><span>Морские хабы</span><strong id="portCount">—</strong></div></div>
+  <ul class="list" id="maritimeList"><li class="empty">Ожидание данных кабельной карты…</li></ul>
+  <div class="module-tip" id="maritimeTip" hidden>Кабели передают международный интернет-трафик. Владельцы, длина и ёмкость отображаются только при наличии в источнике; кэш может быть устаревшим.</div>
+</section>
+<section class="panel third monitor-module" data-module="space" id="moduleSatellite">
+  <div class="head"><span class="title">14 / GOES · EARTH DISK</span><span class="status" id="satelliteStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="satellite" aria-label="О спутниковом модуле">i</button><button type="button" data-retry="satellite">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="goesToggle" data-module-layer="goes"> Спутник на карте</label></div>
+  <p class="module-description" id="satelliteMessage">Спутниковая подложка и временной срез. Доступность и задержка зависят от выбранного продукта.</p>
+  <div class="module-timeline"><label for="satelliteHours">Архив: <span id="satelliteTimeLabel">−3 ч</span></label><input id="satelliteHours" type="range" min="0" max="6" value="3" step="1"><button type="button" id="satellitePlay" aria-pressed="false">▶ PLAY</button></div>
+  <div class="module-tip" id="satelliteTip" hidden>Полный диск GOES показывает облачность над своей зоной наблюдения. Это не глобальный одновременный снимок; временная метка указывает запрошенный кадр.</div>
+</section>
+<section class="panel third monitor-module" data-module="space" id="moduleRadio">
+  <div class="head"><span class="title">15 / GLOBAL RADIO ETHER</span><span class="status" id="radioStatus">REFERENCE MODE</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="radio" aria-label="О радиомодуле">i</button><button type="button" data-retry="radio">↻ Повторить</button></div>
+  <p class="module-description" id="radioMessage">Диапазоны радиосвязи и открытые приёмники. Без доступного потока SDR реальные сигналы не отображаются.</p>
+  <label class="module-select-label" for="radioBand">Что слушают?</label><select id="radioBand" class="module-select"><option value="hf">КВ-связь · 3–30 МГц</option><option value="aviation">Гражданская авиация · 118–137 МГц</option><option value="vhf">Любительский VHF · 144–146 МГц</option><option value="uhf">UHF · 430–440 МГц</option></select>
+  <canvas id="radioWaterfall" class="radio-waterfall" height="100" aria-label="Декоративная спектрограмма без live-аудиопотока"></canvas>
+  <div class="module-links"><a href="https://pskreporter.info/pskmap.html" target="_blank" rel="noopener noreferrer">PSKReporter ↗</a><a href="http://www.websdr.org/" target="_blank" rel="noopener noreferrer">Каталог WebSDR ↗</a></div>
+  <div class="module-tip" id="radioTip" hidden>Спектрограмма здесь — визуальный индикатор интерфейса, а не измерение радиосигнала. Для live-спектра требуется подключённый SDR-поток; станции не генерируются искусственно.</div>
+</section>
+<section class="panel third monitor-module" data-module="space" id="moduleAurora">
+  <div class="head"><span class="title">16 / AURORA + SOLAR WIND</span><span class="status" id="auroraStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="aurora" aria-label="О полярных сияниях">i</button><button type="button" data-retry="aurora">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="auroraToggle" data-module-layer="aurora"> Слой на карте</label></div>
+  <div class="aurora-reading"><strong id="auroraLevel">—</strong><span id="auroraBadge" class="aurora-badge">ОЖИДАНИЕ ДАННЫХ</span></div>
+  <p class="module-description" id="auroraMessage">NOAA OVATION: вероятность полярного сияния. Прогноз вероятности не гарантирует видимость на земле.</p>
+  <div class="aurora-scale"><span>🟢 Kp 0–3 · Тихо</span><span>🟡 Kp 4–5 · Повышенная активность</span><span>🔴 Kp 6+ · Сильный шторм</span></div>
+  <div class="module-tip" id="auroraTip" hidden>Сияние зависит от облачности, темноты, широты и локального светового загрязнения. NOAA OVATION оценивает вероятность свечения, а Kp описывает геомагнитную активность.</div>
+</section>
+<section class="panel third monitor-module" data-module="earth" id="moduleNight">
+  <div class="head"><span class="title">17 / NIGHT EARTH · VIIRS</span><span class="status" id="nightStatus">NOT LOADED</span></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="night" aria-label="О ночных огнях">i</button><button type="button" data-retry="night">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="nightToggle" data-module-layer="night"> Ночной слой на карте</label></div>
+  <p class="module-description" id="nightMessage">Спутниковые наблюдения ночной освещённости. Снимки зависят от облаков, Луны и времени пролёта.</p>
+  <div class="module-segment" role="group" aria-label="Режим ночной освещённости"><button type="button" data-night-mode="normal" class="active">Стандартная ночь</button><button type="button" data-night-mode="anomaly">Сравнение / аномалии</button></div>
+  <div class="night-legend"><span><i></i> Наблюдаемое свечение</span><small id="nightModeNote">Слой наблюдений, не live-датчик отключений</small></div>
+  <div class="module-tip" id="nightTip" hidden>Сравнение изображений помогает заметить возможные изменения, но не подтверждает blackout автоматически. Облака, лунный свет, атмосфера и геометрия наблюдения влияют на яркость.</div>
+</section>
+</main>
+
+
+<section class="panel earth-watch-panel" id="environmentWatch" data-module="weather">
+  <div class="head"><span class="title">21 / LOCAL ENVIRONMENT · POINT MONITOR</span><span class="status" id="envStatus">ОЖИДАНИЕ</span></div>
+  <div class="earth-watch-toolbar"><span>Точка: <strong id="envPoint">48.890°, 8.700°</strong></span><div><button type="button" id="envUseMap">◎ Точка карты</button><button type="button" id="envLocate">⌖ Моё место</button><button type="button" id="envRefresh">↻ Обновить</button></div></div>
+  <div class="earth-watch-metrics">
+    <article><span>ТЕМПЕРАТУРА</span><strong id="envTemp">—</strong><small id="envHumidity">Влажность —</small></article>
+    <article><span>ОСАДКИ / ВЕТЕР</span><strong id="envRain">—</strong><small id="envWind">Ветер —</small></article>
+    <article><span>УФ-ИНДЕКС</span><strong id="envUv">—</strong><small id="envUvMax">UV max —</small></article>
+    <article><span>ВОЗДУХ · EUROPEAN AQI</span><strong id="envAqi">—</strong><small id="envAirTime">Время источника —</small></article>
+    <article><span>ВЫСОТА</span><strong id="envElevation">—</strong><small>Модель высоты Open-Meteo</small></article>
+    <article><span>РАССВЕТ / ЗАКАТ</span><strong id="envSun">—</strong><small>Локальное время точки</small></article>
+  </div>
+  <div class="earth-watch-detail-grid">
+    <div><strong>Загрязнители воздуха</strong><p>PM2.5 <b id="envPm25">—</b> · PM10 <b id="envPm10">—</b></p><p>NO₂ <b id="envNo2">—</b> · O₃ <b id="envOzone">—</b></p></div>
+    <div><strong>Пыльца · прогноз для поддерживаемых регионов</strong><p id="envPollen">Загрузка пыльцевых данных…</p></div>
+  </div>
+  <details class="earth-watch-info"><summary>ⓘ Методика и ограничения</summary><p>Погода и пыльца могут быть модельными прогнозами, а не измерениями ближайшей станции. Отсутствующие переменные и регионы без покрытия показываются как недоступные. Источник: Open-Meteo.</p></details>
+</section>
+
+<section class="panel earth-watch-panel" id="spaceWeatherWatch" data-module="space">
+  <div class="head"><span class="title">22 / SPACE WEATHER · SOLAR FLARES</span><span class="status" id="flareStatus">ОЖИДАНИЕ</span></div>
+  <div class="earth-watch-toolbar"><span>NOAA SWPC · GOES X-ray flux, последние 6 часов</span><button type="button" id="flareRefresh">↻ Обновить космическую погоду</button></div>
+  <div class="earth-watch-metrics space-weather-metrics">
+    <article><span>ТЕКУЩИЙ КЛАСС ПОТОКА</span><strong id="flareClass">—</strong><small id="flareFlux">Ожидание измерения</small></article>
+    <article><span>ПИК В СРЕЗЕ</span><strong id="flarePeak">—</strong><small>GOES X-ray 0.1–0.8 nm</small></article>
+    <article><span>ГЕОМАГНИТНАЯ АКТИВНОСТЬ</span><strong id="kpValueWatch">Связанный модуль Kp</strong><small>Существующий показатель NOAA Kp в разделе SPACE</small></article>
+  </div>
+  <div class="head earth-watch-subhead"><span class="title">NOAA SWPC · ALERT FEED</span><span class="status" id="spaceAlertsStatus">ОЖИДАНИЕ</span></div>
+  <ul class="list" id="spaceAlerts"><li class="empty">Загрузка официальных предупреждений NOAA…</li></ul>
+  <details class="earth-watch-info"><summary>ⓘ Методика и ограничения</summary><p>Классы A/B/C/M/X рассчитываются по потоку рентгеновского излучения GOES. Класс потока не равен отдельному подтверждённому событию вспышки; предупреждения приведены из ленты NOAA. Возможные последствия для связи — риск, не гарантия сбоя.</p></details>
+</section>
+
+<section class="panel earth-watch-panel" id="infrastructureWatch" data-module="transport">
+  <div class="head"><span class="title">23 / INFRASTRUCTURE WATCH · GERMANY</span><span class="status" id="infraStatus">ОЖИДАНИЕ</span></div>
+  <div class="earth-watch-toolbar"><span id="infraCoverage">Проверка доступных источников…</span><button type="button" id="infraRefresh">↻ Обновить каталог</button></div>
+  <ul class="list" id="infraSources"><li class="empty">Проверка каталога первоисточников…</li></ul>
+  <details class="earth-watch-info"><summary>ⓘ Покрытие и ограничения</summary><p id="infraNotice">Публичные ленты не покрывают все локальные неисправности. Наличие официальной страницы не означает, что все её события загружаются автоматически.</p></details>
+</section>
+
+<section class="panel local-radar-panel" id="localRadarPanel" data-module="space">
+  <div class="head"><span class="title">18 / LOCAL ZENITH · OVERHEAD RADAR</span><span class="status" id="localRadarStatus">ОЖИДАНИЕ</span></div>
+  <div class="local-radar-toolbar"><button type="button" id="localRadarLocate">◎ Определить моё место</button><button type="button" id="localRadarUseMap">Использовать выбранную точку карты</button></div>
+  <p class="local-radar-location" id="localRadarLocation">Выберите точку на карте или разрешите геолокацию браузера.</p>
+  <div class="local-radar-grid">
+    <article><span class="local-radar-label">МКС · ТЕКУЩЕЕ ПОЛОЖЕНИЕ</span><strong id="overheadIssDistance">—</strong><small id="overheadIssDetail">Ожидание координат МКС</small></article>
+    <article><span class="local-radar-label">СОЛНЦЕ</span><strong id="overheadSunset">—</strong><small id="overheadSunrise">Рассвет: —</small></article>
+    <article><span class="local-radar-label">ЛУНА</span><strong id="overheadMoonPhase">—</strong><small id="overheadMoonDetail">—</small></article>
+    <article><span class="local-radar-label">БЛИЖАЙШЕЕ ЗЕМЛЕТРЯСЕНИЕ</span><strong id="overheadQuakeDistance">—</strong><small id="overheadQuakeDetail">Поиск в каталоге USGS</small></article>
+  </div>
+  <p class="local-radar-note">Положение МКС показывает текущую географическую близость, а не гарантированный пролёт над точкой. Для точного прогноза пролёта нужны орбитальные элементы и расчёт траектории. Сейсмический поиск использует каталог USGS за последний год.</p>
+</section>
+<section class="panel satellite-intercept-panel" id="satelliteInterceptPanel" data-module="space">
+  <div class="head"><span class="title">20 / ORBITAL INTERCEPT · SATELLITE PASS</span><span class="status" id="satelliteInterceptStatus">ОЖИДАНИЕ</span></div>
+  <p class="module-description">Орбитальное положение рассчитывается по открытым GP/TLE-элементам CelesTrak. Это прогноз по орбите, не телеметрия приёмника и не подтверждение фактического радиосигнала.</p>
+  <div class="satellite-intercept-controls">
+    <label for="satelliteCategory">КАТАЛОГ</label>
+    <select id="satelliteCategory">
+      <option value="stations">Станции и пилотируемые</option>
+      <option value="starlink">Starlink</option>
+      <option value="weather">Погодные / NOAA</option>
+      <option value="resource">Дистанционное зондирование</option>
+      <option value="visual">Яркие спутники</option>
+    </select>
+    <button type="button" id="satelliteReload">↻ Обновить каталог</button>
+    <button type="button" id="satelliteUseLocation">Использовать точку карты</button>
+  </div>
+  <div class="satellite-intercept-grid">
+    <article><span>ЦЕЛЬ</span><strong id="satelliteTargetName">—</strong><small id="satelliteTleAge">Возраст орбитальных элементов: —</small></article>
+    <article><span>ПОДСПУТНИКОВАЯ ТОЧКА</span><strong id="satelliteTargetPosition">—</strong><small>Расчётная широта / долгота</small></article>
+    <article><span>ВЫСОТА / СКОРОСТЬ</span><strong id="satelliteTargetAltitude">—</strong><small id="satelliteTargetSpeed">—</small></article>
+    <article><span>ВИДИМОСТЬ ИЗ ТОЧКИ</span><strong id="satelliteTargetElevation">—</strong><small id="satelliteNextPass">Ожидание расчёта</small></article>
+  </div>
+  <div class="satellite-target-row"><label for="satelliteTarget">Выбрать аппарат</label><select id="satelliteTarget"></select><button type="button" id="satelliteLock" aria-pressed="false">◎ Захват цели</button><label><input type="checkbox" id="satelliteFootprintToggle" checked> Пятно покрытия</label><label><input type="checkbox" id="satelliteTrailToggle" checked> Траектория</label></div>
+  <div class="satellite-pass-head"><strong>БЛИЖАЙШИЕ ПРОЛЁТЫ</strong><span id="satelliteCatalogCount">—</span></div>
+  <ul class="list satellite-pass-list" id="satellitePassList"><li class="empty">Загрузка орбитальных элементов…</li></ul>
+  <p class="local-radar-note">Пятно покрытия — геометрический горизонт для высоты спутника, не карта радиосвязи или зоны приёма. Прогноз пролётов использует двухминутный шаг и ограничен шестью часами; точность зависит от возраста TLE и качества источника.</p>
+</section>
+<section class="panel ambient-panel" id="ambientPanel" data-module="space">
+  <div class="head"><span class="title">19 / SCI-FI AMBIENT ENGINE</span><span class="status" id="ambientStatus">ВЫКЛЮЧЕН</span></div>
+  <p class="module-description">Процедурный фон без аудиофайлов: низкий двигатель, мягкий розовый шум и редкие сигналы бортового интерфейса.</p>
+  <div class="ambient-controls"><button type="button" id="ambientToggle" aria-pressed="false">▶ Включить фон</button><label for="ambientVolume">Громкость <input id="ambientVolume" type="range" min="0" max="100" value="24"></label><label class="ambient-check"><input id="ambientBeeps" type="checkbox" checked> Редкие сигналы</label></div>
+  <div class="ambient-presets" role="group" aria-label="Акустический профиль"><button type="button" data-ambient-preset="bridge" class="active">КОРАБЛЬ</button><button type="button" data-ambient-preset="server">СЕРВЕРНАЯ</button><button type="button" data-ambient-preset="radio">РАДИОПОMЕХИ</button></div>
+  <p class="local-radar-note">Звук запускается только после нажатия. При выключении вкладки/кнопки аудиоконтекст приостанавливается; аудио генерируется Web Audio API.</p>
+</section>
+
+<div class="notice"><strong>DATA INTEGRITY:</strong> NASA GIBS imagery is satellite-derived but may be delayed; weather and air-quality layers may be modelled. OpenSky, ENTSO-E, fire-feed keys and some marine/aviation APIs have access, quota or licensing limits. Where access fails, Emonito displays unavailable status instead of fabricated data. NASA GIBS imagery attribution: NASA EOSDIS / GIBS.</div>
+<footer class="foot"><span>EMONITO / PLANET EARTH CONTROL DECK</span><span id="lastRefresh">Waiting for first data refresh</span><span>OpenStreetMap · NASA · USGS · NOAA · Open-Meteo · Copernicus · OWID</span></footer>
+</div>
+<button id="helpTour" class="help-tour" type="button" aria-label="Открыть обучение" title="Обучение">? <span>HELP</span></button>
+<div id="onboardingOverlay" class="onboarding-overlay" hidden aria-hidden="true"></div>
+<section id="onboardingTour" class="onboarding-tour" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" aria-describedby="onboardingBody" hidden>
+  <div id="onboardingCard" class="onboarding-card" tabindex="-1">
+    <div class="onboarding-kicker"><span id="onboardingCounter">1 / 5</span><span>EMONITO / FIELD GUIDE</span></div>
+    <button id="onboardingClose" class="onboarding-close" type="button" aria-label="Закрыть обучение">×</button>
+    <h2 id="onboardingTitle">Знакомство с EMONITO</h2>
+    <p id="onboardingBody"></p>
+    <div class="onboarding-actions"><button id="onboardingSkip" type="button">Пропустить</button><div><button id="onboardingBack" type="button" disabled>← Назад</button><button id="onboardingNext" class="primary" type="button">Далее →</button></div></div>
+  </div>
+</section>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+<script type="module" src="app.js?v=async-map-chain-1"></script>
+</body></html>
