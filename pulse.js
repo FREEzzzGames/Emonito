@@ -15,7 +15,7 @@ const views = {
 };
 const sources = [
  { id: 'sport', label: 'SPORT / ESPN', icon: '🏆', title: 'Матчи и результаты', description: 'Открытый scoreboard: доступность зависит от выбранного вида спорта и ответа источника.', url: 'https://www.espn.com/', kind: 'sports' },
- { id: 'gaming', label: 'GAMING / STEAM', icon: '🎮', title: 'Новости игрового мира', description: 'Последние публикации Steam News. Данные могут быть недоступны в браузере или ограничены источником.', url: 'https://store.steampowered.com/news/', kind: 'games' },
+ { id: 'gaming', label: 'GAMING / STEAM', icon: '🎮', title: 'Новости игрового мира', description: 'Публикации Steam News. Данные могут быть недоступны в браузере или ограничены источником.', url: 'https://store.steampowered.com/news/', kind: 'games' },
  { id: 'culture', label: 'CULTURE / MUSIC', icon: '🎵', title: 'Музыка и новые релизы', description: 'Открой новые релизы и редакционные подборки музыкальных сервисов.', url: 'https://music.apple.com/', kind: 'music' },
  { id: 'culture', label: 'CULTURE / VIDEO', icon: '▶', title: 'Что смотрят', description: 'Официальная страница популярных видео. PULSE не придумывает счётчики просмотров.', url: 'https://www.youtube.com/feed/trending', kind: 'video' },
  { id: 'gaming', label: 'GAMING / ESPORTS', icon: '⌁', title: 'Киберспорт и турниры', description: 'Расписание и результаты турниров — через официальные страницы организаторов.', url: 'https://www.esports.net/', kind: 'esports' },
@@ -79,7 +79,7 @@ async function loadLiveData() {
  const jobs = [
   (async () => {
    try {
-    const response = await fetch('https://store.steampowered.com/feeds/news/app/593110/?cc=us&l=en', { headers: { Accept: 'application/atom+xml,application/xml,text/xml' }, signal: AbortSignal.timeout(7000) });
+    const response = await fetch('https://store.steampowered.com/feeds/news/?l=english', { headers: { Accept: 'application/atom+xml,application/xml,text/xml' }, signal: AbortSignal.timeout(7000) });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const xmlText = await response.text();
     const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
