@@ -27,11 +27,26 @@ jobs:
           const browser = await chromium.launch({ headless: true });
           const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
           const pageErrors = [];
+          const consoleErrors = [];
+          const failedRequests = [];
           page.on('pageerror', error => pageErrors.push(error.message));
+          page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+          page.on('requestfailed', request => failedRequests.push(request.url() + ' :: ' + (request.failure()?.errorText || 'failed')));
           try {
             const response = await page.goto('https://freezzzgames.github.io/Emonito/?smoke=' + Date.now(), { waitUntil: 'domcontentloaded', timeout: 60000 });
             if (!response || !response.ok()) throw new Error('Pages response is not OK');
-            await page.waitForSelector('#map .leaflet-pane', { timeout: 30000 });
+            console.log('PAGE_DIAGNOSTICS', JSON.stringify(await page.evaluate(() => ({
+              title: document.title,
+              hasMap: !!document.querySelector('#map'),
+              scripts: [...document.scripts].map(script => script.src).filter(Boolean),
+              bodyStart: document.body.innerText.slice(0, 240)
+            }))));
+            try {
+              await page.waitForSelector('#map .leaflet-pane', { timeout: 30000 });
+            } catch (error) {
+              console.log('MAP_INIT_DIAGNOSTICS', JSON.stringify({ pageErrors, consoleErrors, failedRequests }));
+              throw error;
+            }
             await page.waitForSelector('#emoAmbient', { timeout: 30000 });
             const mapBox = await page.locator('#map').boundingBox();
             if (!mapBox || mapBox.width < 250 || mapBox.height < 100) throw new Error('Map has invalid mobile dimensions');
