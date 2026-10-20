@@ -26,7 +26,7 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
   function makeQuery(key, bounds) {
     const bbox = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()]
       .map(value => Number(value).toFixed(5)).join(',');
-    return '[out:json][timeout:15];(' + LAYER_CONFIG[key].query.replaceAll('{bbox}', bbox) + ');out center tags ' + MAX_FEATURES + ';';
+    return '[out:json][timeout:15];(' + LAYER_CONFIG[key].query.replaceAll('{bbox}', bbox) + ');out center ' + MAX_FEATURES + ';';
   }
 
   async function fetchOverpass(query, signal) {
