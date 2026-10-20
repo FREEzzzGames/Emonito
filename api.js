@@ -90,10 +90,12 @@ export class EmonitoApiManager {
   }
 }
 
-export function createApi(requests = new Map()) {
-  const manager = new EmonitoApiManager({ requests });
+export function createApi(requests = new Map(), { ttl = 60000, retries = 1 } = {}) {
+  const manager = new EmonitoApiManager({ requests, retries });
   return async function fetchJson(url, timeout = DEFAULT_TIMEOUT) {
-    const result = await manager.request(url, { cacheKey: url, ttl: 0, timeout, retries: 1, force: true });
+    // Reuse short-lived cached responses during overlapping dashboard refreshes;
+    // after an upstream failure, EmonitoApiManager returns the last known snapshot.
+    const result = await manager.request(url, { cacheKey: url, ttl, timeout, retries, force: false });
     return result.data;
   };
 }
