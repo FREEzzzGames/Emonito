@@ -224,9 +224,9 @@ export function initEarthWatch({ state }) {
   $('envRefresh')?.addEventListener('click', loadEnvironment);
   $('flareRefresh')?.addEventListener('click', loadSpaceWatch);
   $('infraRefresh')?.addEventListener('click', loadInfrastructure);
-  map?.on('click', event => {
-    // The map module updates state.location on the same click; use the clicked point explicitly.
-    usePoint({ latitude: event.latlng.lat, longitude: event.latlng.lng });
+  window.addEventListener('emonito:point-selected', event => {
+    const d = event.detail || {};
+    if (Number.isFinite(Number(d.latitude)) && Number.isFinite(Number(d.longitude))) usePoint({ latitude: Number(d.latitude), longitude: Number(d.longitude) });
   });
   showPoint();
   loadEnvironment(); loadSpaceWatch(); loadInfrastructure();
