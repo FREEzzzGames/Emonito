@@ -33,6 +33,9 @@ export function initMonitoringModules({state}){
  const busy=(name,on)=>document.querySelectorAll('[data-retry="'+name+'"]').forEach(b=>{b.disabled=on;b.textContent=on?'… Загрузка':'↻ Повторить';});
  document.querySelector('[data-layer-toggle="powerInfra"]')?.addEventListener('change',e=>{if(e.target.checked){if(map.getZoom()<7){map.flyTo(map.getCenter(),7,{duration:.5});}else loadPowerInfrastructure();layers.powerInfra.addTo(map);}else if(map.hasLayer(layers.powerInfra))map.removeLayer(layers.powerInfra);});
  document.querySelector('[data-layer-toggle="cables"]')?.addEventListener('change',e=>{if(e.target.checked){if(layers.cables)layers.cables.addTo(map);else loadCables();}else if(layers.cables&&map.hasLayer(layers.cables))map.removeLayer(layers.cables);});
+ const cableMenu=document.querySelector('[data-layer-toggle="cables"]'),cableModule=$('cablesToggle');
+ cableMenu?.addEventListener('change',e=>{if(cableModule)cableModule.checked=e.target.checked;});
+ cableModule?.addEventListener('change',e=>{if(cableMenu)cableMenu.checked=e.target.checked;});
  map.on('moveend',()=>{const t=document.querySelector('[data-layer-toggle="powerInfra"]');if(t?.checked&&map.getZoom()>=5)loadPowerInfrastructure();});
 
 
