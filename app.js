@@ -2,9 +2,9 @@
 import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
 import { createApi } from './api.js?v=cache-policy-2';
 import { initMap as initializeMap } from './map.js?v=maplibre-default-3';
-import { initPoiLayers } from './poi-layers.js?v=poi-layers-1';
+import { initPoiLayers } from './poi-layers.js?v=poi-layers-layout-2';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
-import { initMonitoringModules } from './modules.js?v=modules-1';
+import { initMonitoringModules } from './modules.js?v=power-infra-layer-2';
 import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
 import { initLocalZenith } from './local-zenith.js?v=ambient-local-radar-1';
 import { initAmbientEngine } from './ambient-engine.js?v=ambient-local-radar-1';
