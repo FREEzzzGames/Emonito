@@ -46,6 +46,24 @@ jobs:
             }, { timeout: 15000 });
             await page.locator('#layerMenuToggle').click();
             if (await page.locator('#layerMenuToggle').getAttribute('aria-expanded') !== 'true') throw new Error('Layer menu did not open');
+            // Both engines must render in 2D while Leaflet keeps the interactive overlay stack.
+            await page.locator('#mapEngineMapLibre').click();
+            await page.waitForFunction(() => {
+              const base = document.querySelector('#mapLibreMap');
+              return base && !base.hidden && base.querySelector('canvas.maplibregl-canvas');
+            }, { timeout: 20000 });
+            if (!(await page.locator('#map').evaluate(el => el.classList.contains('maplibre-overlay-active')))) throw new Error('MapLibre mode did not activate');
+            await page.locator('#mapEngineLeaflet').click();
+            if (await page.locator('#map').evaluate(el => el.classList.contains('maplibre-overlay-active'))) throw new Error('Leaflet mode did not restore');
+            for (const layer of ['museums', 'theatres', 'exhibitions', 'shops']) {
+              if (!(await page.locator('[data-layer-toggle="' + layer + '"]').count())) throw new Error('Missing POI layer: ' + layer);
+            }
+            await page.locator('[data-layer-toggle="museums"]').check();
+            await page.waitForFunction(() => {
+              const el = document.querySelector('#museumsStatus');
+              return el && /ЗАПРОС|ГОТОВО|НЕДОСТУПНО|УВЕЛИЧИВАЕМ/.test(el.textContent);
+            }, { timeout: 10000 });
+            await page.locator('[data-layer-toggle="museums"]').uncheck();
             await page.locator('[data-category="weather"]').click();
             if (await page.locator('#environmentWatch').evaluate(el => el.classList.contains('category-screen-hidden'))) throw new Error('Weather category did not reveal environment panel');
             if (pageErrors.length) throw new Error('Browser runtime errors: ' + pageErrors.join(' | '));
