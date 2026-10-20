@@ -2,6 +2,7 @@
 import { SOURCES as SOURCE_CONFIG, DEFAULT_LOCATION, GLOBAL_VIEW } from './config.js';
 import { createApi } from './api.js?v=api-rewrite-1';
 import { initMap as initializeMap } from './map.js?v=dual-map-1';
+import { initPoiLayers } from './poi-layers.js?v=poi-layers-1';
 import { setupMobileCollapsibles } from './ui.js?v=ui-stable-1';
 import { initMonitoringModules } from './modules.js?v=modules-1';
 import { initPlanetExplorer } from './planet-explorer.js?v=dashboard-reorg-2';
@@ -485,6 +486,7 @@ import { initEnhancements } from './enhancements.js?v=geo-ambient-2';
     // Otherwise they observe state.map === null once and remain permanently uninitialized.
     Promise.resolve(mapReady).then((map) => {
       if (!map || !state.map) throw new Error('Map initialization did not produce a map instance');
+      safe('map POI layers',()=>initPoiLayers({state, $, $status, text, esc}));
       safe('new monitoring modules',()=>initMonitoringModules({state}));
       safe('planet explorer',()=>initPlanetExplorer({state}));
       safe('local zenith',()=>initLocalZenith({state, fetchJson, SOURCES, text, fmt, $status}));
