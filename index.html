@@ -20,7 +20,7 @@
     <label><input type="checkbox" data-layer-toggle="issTrail" checked> Траектория МКС</label>
     <label><input type="checkbox" data-layer-toggle="transport"> Транспорт</label>
     <label class="layer-option"><span><input type="checkbox" data-layer-toggle="powerInfra"> Энергетическая инфраструктура</span><span class="status" id="powerInfraStatus">ГОТОВО К ЗАПРОСУ</span></label>
-    <label><input type="checkbox" data-layer-toggle="cables"> Подводные кабели</label>
+    <label><input type="checkbox" data-layer-toggle="cables" checked> Подводные кабели</label>
     <label class="layer-option"><span><input type="checkbox" data-layer-toggle="museums"> Музеи</span><span class="status" id="museumsStatus">ВЫКЛЮЧЕН</span></label>
     <label class="layer-option"><span><input type="checkbox" data-layer-toggle="theatres"> Театры</span><span class="status" id="theatresStatus">ВЫКЛЮЧЕН</span></label>
     <label class="layer-option"><span><input type="checkbox" data-layer-toggle="exhibitions"> Галереи и выставочные пространства</span><span class="status" id="exhibitionsStatus">ВЫКЛЮЧЕН</span></label>
@@ -83,7 +83,7 @@
 
 <section class="panel third monitor-module" data-module="maritime" id="moduleMaritime">
   <div class="head"><span class="title">13 / MARITIME + SUBSEA NETWORKS</span><span class="status" id="maritimeStatus">NOT LOADED</span></div>
-  <div class="module-toolbar"><button type="button" class="module-info" data-info="maritime" aria-label="О модуле морских кабелей">i</button><button type="button" data-retry="maritime">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="cablesToggle" data-module-layer="cables"> Кабели на карте</label></div>
+  <div class="module-toolbar"><button type="button" class="module-info" data-info="maritime" aria-label="О модуле морских кабелей">i</button><button type="button" data-retry="maritime">↻ Повторить</button><label class="module-switch"><input type="checkbox" id="cablesToggle" data-module-layer="cables" checked> Кабели на карте</label></div>
   <p class="module-description" id="maritimeMessage">Подводные магистрали и морские узлы. Сведения о судах требуют отдельного AIS-поставщика.</p>
   <div class="module-stats"><div><span>Маршруты</span><strong id="cableCount">—</strong></div><div><span>Морские хабы</span><strong id="portCount">—</strong></div></div>
   <ul class="list" id="maritimeList"><li class="empty">Ожидание данных кабельной карты…</li></ul>
@@ -225,5 +225,5 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-<script type="module" src="app.js?v=infra-live-fallback-2"></script>
+<script type="module" src="app.js?v=infra-layer-sync-2"></script>
 </body></html>
