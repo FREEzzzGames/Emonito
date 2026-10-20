@@ -223,6 +223,9 @@ export function initEnhancements({ state }) {
     ambient = enable; document.body.classList.toggle('emo-ambient-mode', ambient);
     $('emoAmbient').setAttribute('aria-pressed', String(ambient));
     $('emoAmbient').textContent = ambient ? '× Выйти из Ambient' : '◉ Ambient';
+    // Keep the visual focus mode and the actual Web Audio engine in sync.
+    const audioToggle = $('ambientToggle');
+    if (audioToggle && (audioToggle.getAttribute('aria-pressed') === 'true') !== ambient) audioToggle.click();
     if (ambient) toggleWake(true); else toggleWake(false);
     requestAnimationFrame(() => map.invalidateSize({ pan: false }));
   }
