@@ -55,6 +55,7 @@ export function initLocalZenith({state,fetchJson,text,$status}){
   navigator.geolocation.getCurrentPosition(p=>setLocation({latitude:p.coords.latitude,longitude:p.coords.longitude},'GPS браузера'),e=>$status('localRadarStatus',e.code===1?'ДОСТУП ЗАПРЕЩЁН':'НЕ УДАЛОСЬ ОПРЕДЕЛИТЬ','error'),{enableHighAccuracy:false,timeout:12000,maximumAge:300000});
  });
  $('localRadarUseMap')?.addEventListener('click',()=>{if(state.location)setLocation(state.location,'Выбранная точка карты');else $status('localRadarStatus','СНАЧАЛА ВЫБЕРИТЕ ТОЧКУ НА КАРТЕ','error');});
+ window.addEventListener('emonito:point-selected',event=>{const d=event.detail||{};if(Number.isFinite(Number(d.latitude))&&Number.isFinite(Number(d.longitude)))setLocation({latitude:Number(d.latitude),longitude:Number(d.longitude)},'Выбранная точка карты');});
  setLocation(state.location||{latitude:48.89,longitude:8.70},'Стартовая точка Pforzheim');$status('localRadarStatus','ОЖИДАНИЕ GPS','');
  window.setInterval(updateAstro,60000);window.setInterval(()=>{if(loc)loadQuake();},1800000);
 }
