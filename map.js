@@ -66,7 +66,7 @@ export function initMap(deps) {
   const leafletButton = $('mapEngineLeaflet');
   let mapLibreInstance = null;
   let mapEngine = 'leaflet';
-  let syncingCamera = false;
+  let cameraSyncFrame = 0;
 
   function setMapEngine(engine) {
     if (engine === 'maplibre' && !window.maplibregl) {
@@ -93,19 +93,17 @@ export function initMap(deps) {
         minZoom: 2,
         maxZoom: 19,
         attributionControl: true,
-        cooperativeGestures: false
+        cooperativeGestures: false,
+        interactive: false
       });
       mapLibreInstance.on('error', (event) => {
         if (event?.error) console.warn('[EMONITO MapLibre]', event.error.message || event.error);
       });
-      mapLibreInstance.on('move', () => {
-        if (syncingCamera || mapEngine !== 'maplibre') return;
-        syncingCamera = true;
-        const center = mapLibreInstance.getCenter();
-        map.setView([center.lat, center.lng], mapLibreInstance.getZoom(), { animate: false });
-        syncingCamera = false;
+      mapLibreInstance.on('load', () => {
+        const center = map.getCenter();
+        mapLibreInstance.jumpTo({ center: [center.lng, center.lat], zoom: map.getZoom() });
+        $status('mapStatus', 'MAPLIBRE 2D READY', 'ok');
       });
-      mapLibreInstance.on('load', () => $status('mapStatus', 'MAPLIBRE 2D READY', 'ok'));
     }
     mapEngine = engine;
     const useMapLibre = engine === 'maplibre';
@@ -139,6 +137,18 @@ export function initMap(deps) {
   window.addEventListener('resize', () => {
     if (mapEngine === 'maplibre' && mapLibreInstance) mapLibreInstance.resize();
   }, { passive: true });
+
+  // Leaflet owns gestures and existing data overlays; MapLibre is a synchronized
+  // WebGL basemap underneath it, so markers/popups remain fully interactive.
+  map.on('move', () => {
+    if (mapEngine !== 'maplibre' || !mapLibreInstance || cameraSyncFrame) return;
+    cameraSyncFrame = requestAnimationFrame(() => {
+      cameraSyncFrame = 0;
+      if (mapEngine !== 'maplibre' || !mapLibreInstance) return;
+      const center = map.getCenter();
+      mapLibreInstance.jumpTo({ center: [center.lng, center.lat], zoom: map.getZoom() });
+    });
+  });
 
   const base = Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
