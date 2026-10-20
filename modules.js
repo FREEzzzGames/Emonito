@@ -23,14 +23,44 @@ export function initMonitoringModules({state}){
  const api=new EmonitoApiManager({requests:state.requests,timeout:16000,retries:2});
  const layers={
   cables:null,
+  powerInfra:L.layerGroup(),
   goes:L.tileLayer.wms(GIBS,{layers:'GOES-East_ABI_GeoColor',format:'image/jpeg',transparent:false,version:'1.1.1',attribution:'NOAA / NASA GIBS',opacity:.84}),
   aurora:L.layerGroup(),
   night:wms(L,'VIIRS_SNPP_DayNightBand_ENCC',{opacity:.84})
  };
- Object.assign(state.layers,{cables:null,goes:layers.goes,aurora:layers.aurora,night:layers.night});
+ Object.assign(state.layers,{cables:null,powerInfra:layers.powerInfra,goes:layers.goes,aurora:layers.aurora,night:layers.night});
  document.querySelectorAll('[data-info]').forEach(b=>{b.title=info[b.dataset.info]||'';b.addEventListener('click',()=>{const tip=$(b.dataset.info+'Tip');if(tip)tip.hidden=!tip.hidden;});});
  const busy=(name,on)=>document.querySelectorAll('[data-retry="'+name+'"]').forEach(b=>{b.disabled=on;b.textContent=on?'… Загрузка':'↻ Повторить';});
+ document.querySelector('[data-layer-toggle="powerInfra"]')?.addEventListener('change',e=>{if(e.target.checked){if(map.getZoom()<5){map.flyTo(map.getCenter(),5,{duration:.5});map.once('moveend',loadPowerInfrastructure);}else loadPowerInfrastructure();layers.powerInfra.addTo(map);}else if(map.hasLayer(layers.powerInfra))map.removeLayer(layers.powerInfra);});
+ document.querySelector('[data-layer-toggle="cables"]')?.addEventListener('change',e=>{if(e.target.checked){if(layers.cables)layers.cables.addTo(map);else loadCables();}else if(layers.cables&&map.hasLayer(layers.cables))map.removeLayer(layers.cables);});
+ map.on('moveend',()=>{const t=document.querySelector('[data-layer-toggle="powerInfra"]');if(t?.checked&&map.getZoom()>=5)loadPowerInfrastructure();});
 
+
+ async function loadPowerInfrastructure(){
+  const checkbox=document.querySelector('[data-layer-toggle="powerInfra"]');
+  if(!map||map.getZoom()<5){status('powerInfraStatus','МАСШТАБ 5+','error');return;}
+  status('powerInfraStatus','ЗАПРОС OSM…');
+  const b=map.getBounds(),bbox=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(n=>n.toFixed(5)).join(',');
+  const query='[out:json][timeout:20];(node["power"~"^(plant|substation|transformer|generator)$"]('+bbox+');way["power"~"^(plant|substation|line|cable)$"]('+bbox+'););out geom center tags;';
+  try{
+   const response=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(22000),cache:'no-store'});
+   if(!response.ok)throw new Error('Overpass HTTP '+response.status);
+   const data=await response.json(),items=Array.isArray(data.elements)?data.elements:[];
+   layers.powerInfra.clearLayers();
+   items.forEach(item=>{
+    const tags=item.tags||{},lat=item.lat??item.center?.lat,lon=item.lon??item.center?.lon,kind=tags.power||'power infrastructure';
+    const name=tags.name||tags['name:en']||({'plant':'Электростанция','substation':'Подстанция','transformer':'Трансформатор','line':'Линия электропередачи','cable':'Энергетический кабель','generator':'Генератор'}[kind]||kind);
+    const geometry=Array.isArray(item.geometry)?item.geometry.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).map(p=>[p.lat,p.lon]):[];
+    let layer;if(['line','cable'].includes(kind)&&geometry.length>1)layer=L.polyline(geometry,{color:kind==='cable'?'#ffb703':'#baff45',weight:2,opacity:.85});
+    else if(Number.isFinite(lat)&&Number.isFinite(lon))layer=L.circleMarker([lat,lon],{radius:kind==='plant'?6:4,color:kind==='plant'?'#ffb703':'#baff45',fillColor:'#111b1d',fillOpacity:.9,weight:1.5});else return;
+    const popup=document.createElement('div');popup.className='map-popup';const title=document.createElement('strong');title.textContent=name;popup.append(title);
+    const detail=document.createElement('p');detail.textContent='Тип: '+kind+' · '+(tags.voltage?'Напряжение: '+tags.voltage+' V':'напряжение не указано');popup.append(detail);
+    const link=document.createElement('a');link.href='https://www.openstreetmap.org/'+item.type+'/'+item.id;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Источник OpenStreetMap ↗';popup.append(link);layer.bindPopup(popup);layer.addTo(layers.powerInfra);
+   });
+   if(checkbox?.checked&&!map.hasLayer(layers.powerInfra))layers.powerInfra.addTo(map);
+   status('powerInfraStatus','OSM · '+items.length+' ОБЪЕКТ.','ok');
+  }catch(error){status('powerInfraStatus','НЕДОСТУПНО · ПОВТОРИТЕ','error');console.warn('[EMONITO power infrastructure]',error);}
+ }
  async function loadCables(force=false){
   busy('maritime',true);status(ids.maritime,'ЗАГРУЗКА');
   try{
