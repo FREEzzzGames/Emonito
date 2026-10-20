@@ -27,7 +27,7 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
   function makeQuery(key, bounds) {
     const bbox = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()]
       .map(value => Number(value).toFixed(5)).join(',');
-    return '[out:json][timeout:15];(' + LAYER_CONFIG[key].query.replaceAll('{bbox}', bbox) + ');out center ' + MAX_FEATURES + ';';
+    return '[out:json][timeout:15];(' + LAYER_CONFIG[key].query.replaceAll('{bbox}', bbox) + ');out center;';
   }
 
   async function fetchOverpass(query, signal) {
@@ -126,7 +126,7 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
       }
     } catch (error) {
       if (controller.signal.aborted && pending.get(key) !== controller) return;
-      $status(key + 'Status', 'НЕДОСТУПНО · ПОВТОРИТЕ ЗАПРОС', 'error');
+      $status(key + 'Status', 'НЕДОСТУПНО · ' + (error?.name === 'AbortError' ? 'ТАЙМ-АУТ' : (error?.message || 'ОШИБКА ИСТОЧНИКА')).slice(0, 42), 'error');
       console.warn('[EMONITO POI]', key, error.message);
     } finally {
       clearTimeout(timer);
