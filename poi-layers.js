@@ -33,20 +33,37 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
   async function fetchOverpass(query, signal) {
     let lastError;
     for (const endpoint of ENDPOINTS) {
-      try {
-        const response = await fetch(endpoint + '?data=' + encodeURIComponent(query), {
-          signal, headers: { Accept: 'application/json' }
-        });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const data = await response.json();
-        if (!Array.isArray(data.elements)) throw new Error('Unexpected Overpass response');
-        return data.elements;
-      } catch (error) {
-        lastError = error;
-        if (signal.aborted) throw error;
+      // Public Overpass instances differ in GET limits; try POST if GET is blocked or rejected.
+      for (const method of ['POST', 'GET']) {
+        try {
+          const options = {
+            method,
+            signal,
+            headers: { Accept: 'application/json' },
+            cache: 'no-store'
+          };
+          let url = endpoint;
+          if (method === 'POST') {
+            options.headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
+            options.body = 'data=' + encodeURIComponent(query);
+          } else {
+            url += '?data=' + encodeURIComponent(query);
+          }
+          const response = await fetch(url, options);
+          if (!response.ok) throw new Error(endpoint + ' HTTP ' + response.status);
+          const data = await response.json();
+          if (!Array.isArray(data.elements)) {
+            const serverMessage = typeof data.remark === 'string' ? data.remark : 'Unexpected Overpass response';
+            throw new Error(serverMessage.slice(0, 100));
+          }
+          return data.elements;
+        } catch (error) {
+          lastError = error;
+          if (signal.aborted) throw error;
+        }
       }
     }
-    throw lastError || new Error('Overpass unavailable');
+    throw lastError || new Error('All Overpass endpoints unavailable');
   }
 
   async function loadLayer(key) {
@@ -126,7 +143,8 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
       }
     } catch (error) {
       if (controller.signal.aborted && pending.get(key) !== controller) return;
-      $status(key + 'Status', 'НЕДОСТУПНО · ' + (error?.name === 'AbortError' ? 'ТАЙМ-АУТ' : (error?.message || 'ОШИБКА ИСТОЧНИКА')).slice(0, 42), 'error');
+      const reason = error?.name === 'AbortError' ? 'ТАЙМ-АУТ' : /failed to fetch|networkerror|load failed/i.test(error?.message || '') ? 'СЕТЬ / CORS' : (error?.message || 'ОШИБКА ИСТОЧНИКА');
+      $status(key + 'Status', 'НЕДОСТУПНО · ' + reason.slice(0, 52), 'error');
       console.warn('[EMONITO POI]', key, error.message);
     } finally {
       clearTimeout(timer);
