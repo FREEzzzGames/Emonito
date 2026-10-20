@@ -50,12 +50,14 @@ export function initPoiLayers({ state, $, $status, text, esc }) {
 
   async function loadLayer(key) {
     const config = LAYER_CONFIG[key];
-    if (!config) return;
+    if (!config || !document.querySelector('[data-layer-toggle="' + key + '"]')?.checked) return;
     if (map.getZoom() < config.minZoom) {
       const nextZoom = config.minZoom;
       $status(key + 'Status', 'УВЕЛИЧИВАЕМ МАСШТАБ…', 'loading');
       map.flyTo(map.getCenter(), nextZoom, { duration: 0.45 });
-      map.once('moveend', () => loadLayer(key));
+      map.once('moveend', () => {
+        if (document.querySelector('[data-layer-toggle="' + key + '"]')?.checked) loadLayer(key);
+      });
       return;
     }
     pending.get(key)?.abort();
