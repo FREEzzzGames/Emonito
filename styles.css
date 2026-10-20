@@ -681,3 +681,8 @@ body.emo-ambient-mode .map-tools-row > :not(.emo-tools){display:none!important}
   .map-mode-controls { display: flex; flex-wrap: wrap; gap: 6px; }
   .map-mode-controls button { min-height: 36px; }
 }
+
+.layer-option { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.layer-option .status { flex:0 0 auto; font-size:9px; }
+.poi-follow { margin-left:auto; align-self:center; padding:6px 8px; border:1px solid var(--line); border-radius:7px; background:var(--panel-2); color:var(--cyan); cursor:pointer; }
+.poi-follow:hover,.poi-follow:focus-visible { border-color:var(--cyan); outline:none; }
