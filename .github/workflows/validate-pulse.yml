@@ -1,0 +1,30 @@
+name: Validate PULSE
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: node --check pulse.js
+      - name: Check required dashboard hooks
+        shell: bash
+        run: |
+          set -euo pipefail
+          for id in clock refresh sourceState updatedAt interests search viewEyebrow viewTitle viewDescription notice featureGrid feedCount feedList trendList resetPrefs; do
+            grep -q "id=\"$id\"" index.html || { echo "Missing DOM id: $id"; exit 1; }
+          done
+          grep -q 'href="styles.css?v=pulse-1"' index.html
+          grep -q 'src="pulse.js?v=pulse-1"' index.html
