@@ -36,7 +36,8 @@ export function initMonitoringModules({state}){
  const cableMenu=document.querySelector('[data-layer-toggle="cables"]'),cableModule=$('cablesToggle');
  cableMenu?.addEventListener('change',e=>{if(cableModule)cableModule.checked=e.target.checked;});
  cableModule?.addEventListener('change',e=>{if(cableMenu)cableMenu.checked=e.target.checked;});
- map.on('moveend',()=>{const t=document.querySelector('[data-layer-toggle="powerInfra"]');if(t?.checked&&map.getZoom()>=5)loadPowerInfrastructure();});
+ let lastPowerBounds='';
+ map.on('moveend',()=>{const t=document.querySelector('[data-layer-toggle="powerInfra"]');if(!t?.checked||map.getZoom()<7)return;const b=map.getBounds(),key=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(n=>n.toFixed(3)).join(',');if(key!==lastPowerBounds){lastPowerBounds=key;loadPowerInfrastructure();}});
 
 
  async function loadPowerInfrastructure(){
