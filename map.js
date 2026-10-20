@@ -268,6 +268,7 @@ export function initMap(deps) {
     const coords = `${fmt(point.latitude, 3)}°, ${fmt(point.longitude, 3)}°`;
     text('selectedCoords', coords);
     text('mobileSelectedCoords', coords);
+    window.dispatchEvent(new CustomEvent('emonito:point-selected', { detail: { ...point, source: 'map' } }));
   };
 
   map.on('click', async (event) => {
