@@ -59,6 +59,87 @@ export function initMap(deps) {
 
   Leaflet.control.zoom({ position: 'bottomright' }).addTo(map);
 
+  // MapLibre is an optional 2D basemap. Leaflet remains the interaction/overlay layer,
+  // so all existing data modules and layer toggles keep working in either map mode.
+  const mapLibreContainer = $('mapLibreMap');
+  const mapLibreButton = $('mapEngineMapLibre');
+  const leafletButton = $('mapEngineLeaflet');
+  let mapLibreInstance = null;
+  let mapEngine = 'leaflet';
+  let syncingCamera = false;
+
+  function setMapEngine(engine) {
+    if (engine === 'maplibre' && !window.maplibregl) {
+      $status('mapStatus', 'MAPLIBRE UNAVAILABLE · CHECK CDN', 'error');
+      return;
+    }
+    if (engine === 'maplibre' && !mapLibreInstance) {
+      mapLibreInstance = new window.maplibregl.Map({
+        container: mapLibreContainer,
+        style: {
+          version: 8,
+          sources: {
+            osmRaster: {
+              type: 'raster',
+              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: '© OpenStreetMap contributors'
+            }
+          },
+          layers: [{ id: 'osm-raster', type: 'raster', source: 'osmRaster', minzoom: 0, maxzoom: 19 }]
+        },
+        center: [map.getCenter().lng, map.getCenter().lat],
+        zoom: map.getZoom(),
+        minZoom: 2,
+        maxZoom: 19,
+        attributionControl: true,
+        cooperativeGestures: false
+      });
+      mapLibreInstance.on('error', (event) => {
+        if (event?.error) console.warn('[EMONITO MapLibre]', event.error.message || event.error);
+      });
+      mapLibreInstance.on('move', () => {
+        if (syncingCamera || mapEngine !== 'maplibre') return;
+        syncingCamera = true;
+        const center = mapLibreInstance.getCenter();
+        map.setView([center.lat, center.lng], mapLibreInstance.getZoom(), { animate: false });
+        syncingCamera = false;
+      });
+      mapLibreInstance.on('load', () => $status('mapStatus', 'MAPLIBRE 2D READY', 'ok'));
+    }
+    mapEngine = engine;
+    const useMapLibre = engine === 'maplibre';
+    if (mapLibreContainer) mapLibreContainer.hidden = !useMapLibre;
+    if (mapLibreContainer) mapLibreContainer.style.display = useMapLibre ? 'block' : 'none';
+    container.classList.toggle('maplibre-overlay-active', useMapLibre);
+    if (map.getPane('tilePane')) map.getPane('tilePane').style.display = useMapLibre ? 'none' : '';
+    if (mapEngineMapLibre) {
+      mapEngineMapLibre.classList.toggle('active', useMapLibre);
+      mapEngineMapLibre.setAttribute('aria-pressed', String(useMapLibre));
+    }
+    if (leafletButton) {
+      leafletButton.classList.toggle('active', !useMapLibre);
+      leafletButton.setAttribute('aria-pressed', String(!useMapLibre));
+    }
+    requestAnimationFrame(() => {
+      map.invalidateSize({ pan: false });
+      if (useMapLibre && mapLibreInstance) {
+        mapLibreInstance.resize();
+        const center = map.getCenter();
+        mapLibreInstance.jumpTo({ center: [center.lng, center.lat], zoom: map.getZoom() });
+        $status('mapStatus', 'MAPLIBRE 2D · LAYERS ACTIVE', 'ok');
+      } else {
+        $status('mapStatus', 'LEAFLET · LAYERS ACTIVE', 'ok');
+      }
+    });
+  }
+
+  mapEngineMapLibre?.addEventListener('click', () => setMapEngine('maplibre'));
+  leafletButton?.addEventListener('click', () => setMapEngine('leaflet'));
+  window.addEventListener('resize', () => {
+    if (mapEngine === 'maplibre' && mapLibreInstance) mapLibreInstance.resize();
+  }, { passive: true });
+
   const base = Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
